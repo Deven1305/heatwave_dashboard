@@ -1,0 +1,81 @@
+######## node api-mongo/create_db.js
+Database created: climateintel
+regions      -> 7 documents inserted
+alerts       -> 3 documents inserted
+observations -> 4 documents inserted
+Collections now in database: observations, alerts, regions
+######## node api-mongo/read.js
+--- Hotspot regions (currentMaxTempC >= 44) ---
+┌─────────┬─────────────────┬─────────────────┐
+│ (index) │ region          │ currentMaxTempC │
+├─────────┼─────────────────┼─────────────────┤
+│ 0       │ 'Western India' │ 47.8            │
+│ 1       │ 'Central India' │ 45.2            │
+└─────────┴─────────────────┴─────────────────┘
+--- Emergency alerts ---
+[
+  {
+    id: 'HW-402911',
+    region: 'North West India',
+    tier: 'Emergency',
+    issued: '07 Aug, 06:15',
+    channel: 'SMS+Siren',
+    message: 'EXTREME HEAT WARNING'
+  }
+]
+--- Alerts per tier (aggregate) ---
+[
+  { _id: 'Watch', count: 1 },
+  { _id: 'Emergency', count: 1 },
+  { _id: 'Warning', count: 1 }
+]
+--- AWS observations ---
+stations: 4, average max temperature: 39.13 C
+######## node api-mongo/update.js
+Alert HW-402905: 1 matched, 1 modified (Warning -> Emergency)
+Region western-india: 1 matched, 1 modified (awsStationsReporting +1)
+Observations flagged (>= 45 C): 2
+Updated alert document: {
+  id: 'HW-402905',
+  region: 'Central India',
+  tier: 'Emergency',
+  issued: '07 Aug, 05:40',
+  channel: 'SMS+Siren',
+  message: 'ESCALATED: heatwave threshold crossed'
+}
+######## node api-mongo/read.js
+--- Hotspot regions (currentMaxTempC >= 44) ---
+┌─────────┬─────────────────┬─────────────────┐
+│ (index) │ region          │ currentMaxTempC │
+├─────────┼─────────────────┼─────────────────┤
+│ 0       │ 'Western India' │ 47.8            │
+│ 1       │ 'Central India' │ 45.2            │
+└─────────┴─────────────────┴─────────────────┘
+--- Emergency alerts ---
+[
+  {
+    id: 'HW-402911',
+    region: 'North West India',
+    tier: 'Emergency',
+    issued: '07 Aug, 06:15',
+    channel: 'SMS+Siren',
+    message: 'EXTREME HEAT WARNING'
+  },
+  {
+    id: 'HW-402905',
+    region: 'Central India',
+    tier: 'Emergency',
+    issued: '07 Aug, 05:40',
+    channel: 'SMS+Siren',
+    message: 'ESCALATED: heatwave threshold crossed'
+  }
+]
+--- Alerts per tier (aggregate) ---
+[ { _id: 'Emergency', count: 2 }, { _id: 'Watch', count: 1 } ]
+--- AWS observations ---
+stations: 4, average max temperature: 39.13 C
+######## node api-mongo/delete.js
+Alerts before delete: 3
+Successfully deleted alert HW-402890.
+Alerts after delete : 2
+Remaining alert ids : HW-402911 (Emergency), HW-402905 (Emergency)
