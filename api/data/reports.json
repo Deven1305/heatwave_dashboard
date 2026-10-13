@@ -1,0 +1,16 @@
+[
+  {
+    "id": "R-001",
+    "plotId": "SG-1045",
+    "region": "North-West India",
+    "status": "Irrigation recommended",
+    "createdAt": "2026-09-11T07:20:00Z"
+  },
+  {
+    "id": "R-002",
+    "plotId": "SG-1050",
+    "region": "Central India",
+    "status": "Water stress warning",
+    "createdAt": "2026-09-11T06:35:00Z"
+  }
+]

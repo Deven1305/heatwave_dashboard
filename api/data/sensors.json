@@ -1,0 +1,32 @@
+[
+  {
+    "sensorId": "SM-101",
+    "plotId": "SG-1045",
+    "soilMoisture": 28,
+    "soilTemperature": 32,
+    "airTemperature": 39.4,
+    "humidity": 54,
+    "rainfall": 2,
+    "timestamp": "2026-09-11T07:00:00Z"
+  },
+  {
+    "sensorId": "SM-102",
+    "plotId": "SG-1050",
+    "soilMoisture": 52,
+    "soilTemperature": 29,
+    "airTemperature": 33.2,
+    "humidity": 48,
+    "rainfall": 8,
+    "timestamp": "2026-09-11T07:05:00Z"
+  },
+  {
+    "sensorId": "SM-103",
+    "plotId": "SG-1081",
+    "soilMoisture": 41,
+    "soilTemperature": 31,
+    "airTemperature": 35.7,
+    "humidity": 41,
+    "rainfall": 9,
+    "timestamp": "2026-09-11T07:10:00Z"
+  }
+]
