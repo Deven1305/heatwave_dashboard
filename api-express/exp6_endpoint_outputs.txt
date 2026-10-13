@@ -1,0 +1,50 @@
+=== GET / ===
+{"service":"kjs-ces-01-express-router-demo","experiment":"Exp-6: Routing using Express.js","routes":["GET    /api/regions","GET    /api/regions/:id","POST   /api/regions","PUT    /api/regions/:id","PATCH  /api/regions/:id","DELETE /api/regions/:id","GET    /api/alerts","GET    /api/alerts/:id","POST   /api/alerts","DELETE /api/alerts/:id"]}
+
+=== GET /api/regions ===
+[{"id":"north-west-india","region":"North West India","normalMaxTempC":38,"currentMaxTempC":41.5,"awsStationsReporting":6,"severity":"Hot Day"},{"id":"north-east-india","region":"North East India","normalMaxTempC":31,"currentMaxTempC":29.8,"awsStationsReporting":4,"severity":"Normal"},{"id":"central-india","region":"Central India","normalMaxTempC":41,"currentMaxTempC":45.2,"awsStationsReporting":7,"severity":"Heatwave"},{"id":"east-coastal-india","region":"East & Coastal India","normalMaxTempC":34,"currentMaxTempC":33,"awsStationsReporting":5,"severity":"Normal"},{"id":"south-peninsula","region":"South Peninsula","normalMaxTempC":33,"currentMaxTempC":40.5,"awsStationsReporting":8,"severity":"Hot Day"},{"id":"western-himalaya","region":"Western Himalaya","normalMaxTempC":24,"currentMaxTempC":22,"awsStationsReporting":3,"severity":"Normal"},{"id":"western-india","region":"Western India","normalMaxTempC":40,"currentMaxTempC":47.8,"awsStationsReporting":9,"severity":"Severe Heatwave"}]
+
+=== GET /api/regions/central-india ===
+{"id":"central-india","region":"Central India","normalMaxTempC":41,"currentMaxTempC":45.2,"awsStationsReporting":7,"severity":"Heatwave"}
+
+=== POST /api/regions (valid) ===
+{"id":"test-region","region":"Test Region","normalMaxTempC":30,"currentMaxTempC":36,"awsStationsReporting":2,"severity":"Normal"}
+
+=== POST /api/regions (validation error -> 400) ===
+{"errors":["\"region\" is required and must be a string.","\"normalMaxTempC\" is required and must be a number.","\"currentMaxTempC\" is required and must be a number.","\"awsStationsReporting\" is required and must be a non-negative number."]}
+HTTP_STATUS:400
+
+=== PATCH /api/regions/test-region (update currentMaxTempC) ===
+{"id":"test-region","region":"Test Region","normalMaxTempC":30,"currentMaxTempC":48,"awsStationsReporting":2,"severity":"Severe Heatwave"}
+
+=== GET /api/regions/test-region (after patch, check severity) ===
+{"id":"test-region","region":"Test Region","normalMaxTempC":30,"currentMaxTempC":48,"awsStationsReporting":2,"severity":"Severe Heatwave"}
+
+=== DELETE /api/regions/test-region ===
+{"message":"Region deleted.","removed":{"id":"test-region","region":"Test Region","normalMaxTempC":30,"currentMaxTempC":48,"awsStationsReporting":2}}
+
+=== GET /api/regions/test-region (after delete -> 404) ===
+{"error":"Region \"test-region\" not found."}
+HTTP_STATUS:404
+
+=== GET /api/alerts ===
+{"count":3,"alerts":[{"id":"HW-402911","region":"North West India","tier":"Emergency","issued":"07 Aug, 06:15","channel":"SMS+Siren","message":"EXTREME HEAT WARNING"},{"id":"HW-402905","region":"Central India","tier":"Warning","issued":"07 Aug, 05:40","channel":"App Push","message":"Heat warning"},{"id":"HW-402890","region":"South Interior Peninsula","tier":"Watch","issued":"06 Aug, 22:10","channel":"App Push","message":"Heat watch"}]}
+
+=== GET /api/alerts?tier=Emergency ===
+{"count":1,"alerts":[{"id":"HW-402911","region":"North West India","tier":"Emergency","issued":"07 Aug, 06:15","channel":"SMS+Siren","message":"EXTREME HEAT WARNING"}]}
+
+=== POST /api/alerts (valid) ===
+{"id":"HW-1790146470616","region":"Western India","tier":"Emergency","message":"Severe heatwave conditions expected.","channel":"App Push","issued":"23 Sept, 12:24"}
+
+=== POST /api/alerts (invalid tier -> 400) ===
+{"errors":["\"tier\" is required and must be one of: Safe, Watch, Warning, Emergency."]}
+HTTP_STATUS:400
+
+=== GET /api/alerts/HW-999999 (unknown id -> 404) ===
+{"error":"Alert \"HW-999999\" not found."}
+HTTP_STATUS:404
+
+=== GET /unknown-route (404) ===
+{"error":"Route not found","requestedPath":"/unknown-route"}
+HTTP_STATUS:404
+
