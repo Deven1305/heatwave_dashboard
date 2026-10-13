@@ -1,0 +1,34 @@
+/* CSS Module: class names here are LOCAL to Badge.jsx by default.
+   Vite renames .badge -> something like "_badge_1x2y3" at build time, so
+   this file can never accidentally collide with a same-named class
+   anywhere else in the app (e.g. global.css). Import it with
+   `import styles from "./Badge.module.css"` and reference classes as
+   `styles.badge`, `styles.safe`, etc. — see Badge.jsx. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  width: fit-content;
+}
+
+.safe {
+  background: rgba(69, 123, 157, 0.18);
+  color: var(--steel);
+}
+.watch {
+  background: rgba(244, 163, 0, 0.18);
+  color: var(--amber);
+}
+.warning {
+  background: rgba(247, 127, 0, 0.18);
+  color: var(--orange);
+}
+.emergency {
+  background: rgba(214, 40, 40, 0.18);
+  color: var(--red);
+}
