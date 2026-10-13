@@ -1,0 +1,33 @@
+{
+  "name": "kjs-ces-01-climate-intel-forms-nav",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "KJS-CES-01 Climate Intelligence System \u2014 Exp-3 (Form Handling & Validation) + React Router Navigation & Dashboard",
+  "scripts": {
+    "dev": "vite",
+    "dev:all": "node scripts/dev-all.js",
+    "build": "vite build",
+    "preview": "vite preview",
+    "api": "node api/server.js",
+    "dev:api": "node api/server.js",
+    "api-express": "node api-express/server.js",
+    "mongo:create": "node api-mongo/create_db.js",
+    "mongo:read": "node api-mongo/read.js",
+    "mongo:update": "node api-mongo/update.js",
+    "mongo:delete": "node api-mongo/delete.js",
+    "api-mongo": "node api-mongo/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mongodb": "^7.7.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.0"
+  }
+}
