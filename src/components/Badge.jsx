@@ -10,11 +10,11 @@ import styles from "./Badge.module.css";
  * Reports) — one component, four call sites, per-tier styling via a single
  * `tier` prop.
  */
-export default function Badge({ tier }) {
+export default function Badge({ tier, label }) {
   const tierClass = styles[tier] || "";
   return (
     <span className={`${styles.badge} ${tierClass}`}>
-      {tier ? tier.toUpperCase() : ""}
+      {(label || tier) ? String(label || tier).toUpperCase() : ""}
     </span>
   );
 }
