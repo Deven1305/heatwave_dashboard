@@ -106,7 +106,7 @@ app.post('/api/alerts/:id/clear', wrap(async (req, res) => {
 // ---- observation reports --------------------------------------------------------------------
 app.get('/api/reports', wrap(async (req, res) => {
   const rows = await db.collection('reports').find({}).sort({ createdAt: -1 }).limit(intParam(req.query.limit, 100, 1, 500))
-    .project({ 'photo.dataUrl': 0 }).toArray();
+    .project({ 'photo.dataUrl': 0, email: 0, phone: 0 }).toArray(); // contact details stay private
   res.json({ count: rows.length, reports: rows.map(({ _id, ...rest }) => ({ id: _id, ...rest })) });
 }));
 
