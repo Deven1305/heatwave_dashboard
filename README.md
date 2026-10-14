@@ -61,7 +61,7 @@ rules, raises automatic alerts, and shows everything in a React dashboard, today
 
 - Fetches current weather, the past 30 days and a 5-day forecast (today + 4) for **30 cities in 7 regions** every 30 minutes.
 - Saves every reading in MongoDB, so the history grows over time and is never overwritten.
-- Compares each city's daily maximum with **its own 10-year normal** and classifies it: Normal, Hot Day, Heatwave, Severe Heatwave.
+- Compares each city's daily maximum with **its own multi-year normal** and classifies it: Normal, Hot Day, Heatwave, Severe Heatwave.
 - Raises an **automatic alert** per region when the level changes, and marks it cleared when the region returns to normal. All alerts stay as history.
 - Dashboard with seven tabs: Overview, Regions, Stations, Alerts, Reports, Forecast, Data.
 - Lets users **record their own alerts** and **submit observation reports** (validated, stored in MongoDB).
@@ -80,8 +80,8 @@ npm run dev:all      # starts the live API (port 4300) and the React app (port 5
 
 Then open **http://localhost:5173**.
 
-On the very first start the API fetches the data and computes each city's 10-year normal (about 30 to 90 seconds because the free
-Open-Meteo API limits requests per minute). The dashboard works immediately; heat levels appear once the normals are ready.
+On the very first start the API fetches the data and computes each city's normal from 6 years of history (about 1 to 3 minutes, because the free
+Open-Meteo API limits requests per minute and per hour). The dashboard works immediately; heat levels appear once the normals are ready.
 Press `Ctrl+C` to stop both.
 
 | Command | What it does |
@@ -148,8 +148,10 @@ Indexes make `(stationId, observedAt)` and `(stationId, date)` unique, so a read
 
 - **Source.** Open-Meteo forecast API (current weather + daily values) and its archive API (ERA5 reanalysis, for the normals).
   Time zone is India Standard Time. 30 cities, 4 to 6 per region, one model point each.
-- **Normal.** For each city and calendar day, the average daily maximum over **2015–2024**, smoothed over ±7 days
-  (a 10-year average, not IMD's official 30-year normal). Computed once on first start and stored.
+- **Normal.** For each city and calendar day, the average daily maximum over **2019–2024**, smoothed over ±7 days
+  (a 6-year average, not IMD's official 30-year normal). Computed once on first start and stored. Open-Meteo's free tier allows about
+  5,000 weighted calls per hour and 6 years for 30 cities uses about 4,700, which is why the period is not longer; set `NORMAL_START_YEAR`
+  (for example `2015`) for a longer one, and the normals then complete over two hours.
 - **Classification** (modelled on the IMD heat-wave criteria):
 
   | Level | Rule |
@@ -216,6 +218,7 @@ Everything has a working default; a `.env` file is **not** required. To change s
 | `LIVE_DB_NAME` | `climateintel_live` | Database name |
 | `LIVE_API_PORT` | `4300` | Live API port |
 | `REFRESH_MINUTES` | `30` | How often the API collects from Open-Meteo |
+| `NORMAL_START_YEAR` | `2019` | First year of the period (to 2024) used for each city's normal |
 | `VITE_LIVE_API_URL` | `http://localhost:4300` | Where the React app finds the API |
 
 Fixed in [live-api/config.js](live-api/config.js): the 30 cities, the 7 regions, days of history/forecast, the normal period.
@@ -286,7 +289,7 @@ See [api/README.md](api/README.md) for the Node core API routes.
 | "The live data service is not reachable" | Start it: `npm run dev:all` (or `npm run live`) |
 | API stops with "Could not connect to MongoDB" | Start the MongoDB service (or Docker container), then run again |
 | Heat levels show "Normal" everywhere | Normal outside the hot season; check the Data tab for the real numbers |
-| First start is slow | It is computing the 10-year normals; the free API limits requests per minute |
+| First start is slow, or heat levels stay "Normal" for a while | It is computing the normals; the free API limits requests per minute and hour. If the hourly limit is reached the rest finish on the next 30-minute cycle |
 | `Fetch latest data` says "Try again in N s" | A refresh just ran; the button is limited to once a minute |
 | "Open-Meteo could not be reached" | No internet or the service is busy; stored data stays available and the next scheduled run retries |
 | `EADDRINUSE` | Another program uses port 4300 or 5173; stop it or change `LIVE_API_PORT` |
