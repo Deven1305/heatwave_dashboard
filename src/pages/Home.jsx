@@ -5,7 +5,7 @@ import { fmtTemp, formatDateTime, timeAgo } from "../api/live.js";
 import { levelColor } from "../components/live/format.js";
 
 const STEPS = [
-  ["01", "Collect", "Every 30 minutes the live API asks Open-Meteo for the current weather, the last 30 days and the next 5 days of 30 Indian cities."],
+  ["01", "Collect", "Every 30 minutes the live API asks Open-Meteo for the current weather, the last 30 days and the coming days of 30 Indian cities."],
   ["02", "Store", "MongoDB keeps every reading and every daily value. Reload the page or restart the server and the history is still there."],
   ["03", "Alert", "Each city is compared with its own 10-year normal using IMD-style heatwave rules. A region's alert follows its worst city."],
 ];

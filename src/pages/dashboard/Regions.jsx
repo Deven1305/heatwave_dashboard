@@ -66,7 +66,7 @@ export default function Regions({ overview, params, goTo }) {
         {state.loading && !state.data ? <Loading /> : state.error ? <ErrorState error={state.error} onRetry={() => setRetry((n) => n + 1)} /> : (
           <>
             <LineChart points={points} lines={LINES} forecastFrom={firstForecast ? dayMs(firstForecast.date) : null} label={`${region.name} daily maximum temperature`} />
-            {days > 33 && series.length < days && <p className="lv-hint">Only {series.length} days are stored so far. Each refresh adds the previous 30 days and the next 5; older history grows over time.</p>}
+            {days > 33 && series.length < days && <p className="lv-hint">Only {series.length} days are stored so far. Each refresh adds the previous 30 days; older history grows over time.</p>}
           </>
         )}
       </section>

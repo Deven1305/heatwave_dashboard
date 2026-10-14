@@ -49,7 +49,7 @@ export default function DataTab({ overview }) {
         <h2>How the numbers are made</h2>
         <ul>
           <li><strong>Source.</strong> <a href={source.url} target="_blank" rel="noreferrer">{source.name}</a> ({source.licence}), a free public weather API that needs no key. Values are model data for one point per city (30 cities, 4–6 per region), <em>not</em> measurements from IMD weather stations.</li>
-          <li><strong>Collection.</strong> The live API asks Open-Meteo for every city every 30 minutes (current weather, the past 30 days of daily values, and the next 5 days) and saves it. Readings are never overwritten; daily rows are updated as a day completes.</li>
+          <li><strong>Collection.</strong> The live API asks Open-Meteo for every city every 30 minutes (current weather, the past 30 days of daily values, and the forecast for today and the 4 days after) and saves it. Readings are never overwritten; daily rows are updated as a day completes.</li>
           <li><strong>Normal.</strong> For each city and calendar day, the average daily maximum of 2015–2024 (ERA5 reanalysis from Open-Meteo), smoothed over ±7 days. This is a 10-year average, not IMD's official 30-year normal.</li>
           <li><strong>Classification</strong>, modelled on IMD: Heatwave = maximum at or above 40 °C (plains), 37 °C (coastal) or 30 °C (hills) <em>and</em> at least 4.5 °C above normal; Severe = at least 6.5 °C above normal; plains also at 45 °C / 47 °C absolute. Hot Day = at the threshold and 3 °C above normal. A region takes the level of its worst city.</li>
           <li><strong>Alerts.</strong> One automatic alert per region: written when the level changes, marked cleared when the region returns to normal.</li>
