@@ -152,12 +152,15 @@ npm run api           # Node core API      → http://localhost:8100
 npm run api-express   # Express Router API → http://localhost:4100
 ```
 
-Optional MongoDB part (needs a local MongoDB on `127.0.0.1:27017`):
+**Run the dashboard on MongoDB** (needs MongoDB running on `127.0.0.1:27017`, see [section 11](#11-mongodb-part-exp-7)):
 
 ```bash
-npm run mongo:create  # create database "climateintel" and load sample data
-npm run api-mongo     # REST API on http://localhost:4200
+npm run mongo:create  # once: create database "climateintel" and load sample data
+npm run dev:mongo     # Node API + MongoDB API (:4200) + React app, wired together
 ```
+
+Then open http://localhost:5173. The dashboard's regions and alerts now come from MongoDB, and an alert saved in the
+dashboard shows up in MongoDB Compass.
 
 Production build: `npm run build` (output in `dist/`), preview it with `npm run preview`.
 
@@ -166,7 +169,8 @@ Production build: `npm run build` (output in `dist/`), preview it with `npm run 
 | Script | What it does |
 |---|---|
 | `dev` | Vite dev server (port 5173) |
-| `dev:all` | Starts Vite + Node API + Express API together; `Ctrl+C` stops all |
+| `dev:all` | Starts Vite + Node API + Express (JSON files) API together; `Ctrl+C` stops all |
+| `dev:mongo` | Same, but the dashboard uses the MongoDB API (:4200) instead of the JSON-file Express API |
 | `build` / `preview` | Production build / serve the build |
 | `api` (`dev:api`) | Node core `http` API on 8100 |
 | `api-express` | Express Router API on 4100 |
@@ -287,6 +291,22 @@ Run the scripts in order (`mongo:create → mongo:read → mongo:update → mong
 saved in [api-mongo/out/all_runs.txt](api-mongo/out/all_runs.txt). Inspect the data with MongoDB Compass at
 `mongodb://localhost:27017`.
 
+### Using MongoDB from the dashboard
+
+What has to be in place:
+
+1. **MongoDB running locally** on port 27017 – install MongoDB Community Server (it runs as a Windows service named
+   `MongoDB`), or start one with Docker: `docker run -d -p 27017:27017 --name mongo mongo`.
+2. **Sample data loaded once**: `npm run mongo:create` (creates `climateintel` with `regions`, `alerts`, `observations`;
+   it **drops and re-creates** those collections, so do not run it if you want to keep changes).
+3. **Start in Mongo mode**: `npm run dev:mongo`. This runs the MongoDB API on port 4200 and starts the React app with
+   `VITE_EXPRESS_API_URL=http://localhost:4200`, so the dashboard reads and writes regions and alerts in MongoDB.
+4. **Look at the data**: open MongoDB Compass, connect to `mongodb://localhost:27017` and open `climateintel`.
+
+Only **regions and alerts** live in MongoDB. Farmers, plots, sensors and submitted observation reports are still served
+by the Node API from the JSON files in `api/data/`. To use a different MongoDB, set `MONGO_URI` (for example an Atlas
+connection string) before starting; never commit a connection string that contains a password.
+
 ## 12. Configuration
 
 Everything has a working default, so **no `.env` file is required**. To change something, copy
@@ -295,7 +315,7 @@ Everything has a working default, so **no `.env` file is required**. To change s
 | Variable | Default | Used by |
 |---|---|---|
 | `VITE_NODE_API_URL` | `http://localhost:8100` | React app |
-| `VITE_EXPRESS_API_URL` | `http://localhost:4100` | React app |
+| `VITE_EXPRESS_API_URL` | `http://localhost:4100` | React app (`dev:mongo` sets it to `http://localhost:4200`) |
 | `MONGO_URI` | `mongodb://127.0.0.1:27017` | `api-mongo/` |
 | `PORT` | 8100 / 4100 / 4200 | each back end |
 
@@ -342,7 +362,8 @@ Open every route listed in section 8 and confirm that the browser console shows 
 |---|---|
 | Dashboard says a service is not reachable | Start the back ends (`npm run dev:all`) |
 | `EADDRINUSE` on a port | Another process uses it – stop it or set `PORT=…` |
-| `MongoServerSelectionError` | MongoDB is not running – start the MongoDB service, or skip the `api-mongo` part |
+| `MongoServerSelectionError` / Mongo API does not start | MongoDB is not running – start the `MongoDB` service (or the Docker container), or use `npm run dev:all` instead |
+| Dashboard still shows the old JSON data | You started with `dev:all`; stop it and run `npm run dev:mongo` |
 | Blank page / stale code after pulling | Delete `node_modules` and `dist`, then `npm install` |
 | Forecast tab empty | No internet – Open-Meteo is the only external call |
 
