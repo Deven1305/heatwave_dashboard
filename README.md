@@ -1,377 +1,303 @@
-# ClimateIntel — Heatwave Monitoring Dashboard (KJS-CES-01)
+# ClimateIntel — Live Heatwave Monitoring for India (KJS-CES-01)
 
-A full-stack learning project: a **React + React Router** front end for regional heatwave monitoring, backed by three small
-back ends that each demonstrate a different Node.js technique (core `http` module, Express Router, Express + MongoDB).
+A full-stack project that collects **real weather data** for 30 Indian cities from the free, public
+[Open-Meteo](https://open-meteo.com) API, **stores it in MongoDB**, classifies heat conditions with IMD-style heatwave
+rules, raises automatic alerts, and shows everything in a React dashboard, today's picture **and the days before it**.
 
-The use case is **KJS-CES-01 — Climate Intelligence for Heatwave Monitoring, Prediction and Early Warning** (collaborating
-organisation: India Meteorological Department). India is split into 7 IMD regions; Automated Weather Stations (AWS) report
-the maximum temperature of each region, and the system raises alerts in four tiers: **Safe → Watch → Warning → Emergency**.
+- **No dummy data on the dashboard.** Every number comes from Open-Meteo, is saved in MongoDB, and is read back from there.
+- **No API key, no account.** Open-Meteo is free for non-commercial use; the data licence is CC BY 4.0.
+- **History survives refreshes and restarts.** Reload the page, or stop and restart the server: the stored readings are still there.
 
-> This is a coursework prototype (Web Programming-II lab). All data in the repository is **sample data**; there is no
-> authentication, no real user data and no secret keys anywhere in the code.
+> Coursework prototype (Web Programming-II lab, collaborating organisation in the use case: India Meteorological Department).
+> The values are model data for one point per city, **not** measurements from IMD weather stations, and the heat levels are an
+> indicative classification, **not** an official warning. Use IMD bulletins for real decisions.
 
 ---
 
 ## Table of contents
 
 1. [Screenshots](#1-screenshots)
-2. [Features](#2-features)
-3. [Tech stack](#3-tech-stack)
-4. [Architecture](#4-architecture)
-5. [Folder structure](#5-folder-structure)
-6. [Getting started](#6-getting-started)
-7. [npm scripts](#7-npm-scripts)
-8. [Front end in detail](#8-front-end-in-detail)
-9. [Back ends in detail](#9-back-ends-in-detail)
-10. [REST API reference](#10-rest-api-reference)
-11. [MongoDB part (Exp-7)](#11-mongodb-part-exp-7)
-12. [Configuration](#12-configuration)
-13. [Form validation rules](#13-form-validation-rules)
-14. [Testing the project](#14-testing-the-project)
-15. [Security and privacy notes](#15-security-and-privacy-notes)
-16. [Troubleshooting](#16-troubleshooting)
-17. [Further documentation](#17-further-documentation)
+2. [What it does](#2-what-it-does)
+3. [Quick start (commands)](#3-quick-start-commands)
+4. [MongoDB setup](#4-mongodb-setup)
+5. [How the data flows](#5-how-the-data-flows)
+6. [The data model (collections)](#6-the-data-model-collections)
+7. [How the numbers are made](#7-how-the-numbers-are-made)
+8. [Dashboard pages](#8-dashboard-pages)
+9. [REST API reference](#9-rest-api-reference)
+10. [Configuration](#10-configuration)
+11. [Folder structure](#11-folder-structure)
+12. [Tests](#12-tests)
+13. [The lab back ends (Exp-5, 6, 7)](#13-the-lab-back-ends-exp-5-6-7)
+14. [Security and privacy](#14-security-and-privacy)
+15. [Troubleshooting](#15-troubleshooting)
+16. [Further documentation](#16-further-documentation)
 
 ---
 
 ## 1. Screenshots
 
-| Home | Dashboard |
+| Home | Overview |
 |---|---|
-| ![Home](docs/screenshots/home.png) | ![Dashboard](docs/screenshots/dashboard.png) |
+| ![Home](docs/screenshots/home.png) | ![Overview](docs/screenshots/overview.png) |
 
-| Regional heat | Report an observation |
+| Regions: 30-day history, normal, forecast | Stations: stored readings |
 |---|---|
-| ![Regional heat](docs/screenshots/regional-heat.png) | ![Report form](docs/screenshots/report-form.png) |
+| ![Regions](docs/screenshots/regions.png) | ![Stations](docs/screenshots/stations.png) |
 
-| Login (live password checklist) | Mobile companion (`/m`) |
+| Alerts | Forecast |
+|---|---|
+| ![Alerts](docs/screenshots/alerts.png) | ![Forecast](docs/screenshots/forecast.png) |
+
+| Data: what MongoDB holds | Observation report form |
+|---|---|
+| ![Data](docs/screenshots/data.png) | ![Report form](docs/screenshots/report-form.png) |
+
+| Login | Mobile companion (`/m`) |
 |---|---|
 | ![Login](docs/screenshots/login.png) | ![Mobile](docs/screenshots/mobile.png) |
 
-## 2. Features
+## 2. What it does
 
-- **Landing page** that explains the system, with a live temperature ticker.
-- **Dashboard** with six tabs: Overview, Regional heat, AWS monitoring, Alerts, Reports and Forecast. Numbers on it come
-  from the real back ends (not hard-coded) and the Forecast tab calls the public Open-Meteo API.
-- **Report an observation** form with full validation (name, e-mail, phone, temperature, URL, date, photo evidence, etc.).
-- **Login** and **Register** forms with different validation styles (a strict password policy with a live strength
-  checklist, and a minimal “name / e-mail contains @ / password ≥ 6” version).
-- **In-page editing patterns**: inline edit, table-row edit, overlay edit, drag-and-drop reordering of cards, input
-  overlay hints, list inlays, forgiving and structured input formats.
-- **Mobile companion** at `/m`: a phone-sized, bottom-navigation view of the alerts.
-- **Three independent back ends** (Node core `http`, Express Router with JSON files, Express with MongoDB).
-- Clear error handling everywhere: loading states, API-down messages, HTTP 400 / 404 / 409 / 500 responses.
+- Fetches current weather, the past 30 days and a 5-day forecast (today + 4) for **30 cities in 7 regions** every 30 minutes.
+- Saves every reading in MongoDB, so the history grows over time and is never overwritten.
+- Compares each city's daily maximum with **its own 10-year normal** and classifies it: Normal, Hot Day, Heatwave, Severe Heatwave.
+- Raises an **automatic alert** per region when the level changes, and marks it cleared when the region returns to normal. All alerts stay as history.
+- Dashboard with seven tabs: Overview, Regions, Stations, Alerts, Reports, Forecast, Data.
+- Lets users **record their own alerts** and **submit observation reports** (validated, stored in MongoDB).
+- Mobile companion page, a live ticker, and a clear "data" tab that shows exactly what is stored and how it is computed.
 
-## 3. Tech stack
+## 3. Quick start (commands)
 
-| Layer | Technology |
-|---|---|
-| Front end | React 18, React Router 6, Vite 5 (plain CSS with design tokens) |
-| Back end 1 | Node.js core modules: `http`, `url`, `fs/promises` |
-| Back end 2 | Express 4, `cors`, JSON-file storage |
-| Back end 3 | Express 4, `cors`, MongoDB native driver 7 |
-| Database | MongoDB (local, optional – only for `api-mongo/`) |
-| External data | [Open-Meteo](https://open-meteo.com) forecast API (free, **no API key**) |
+Requirements: **Node.js 18+** (developed on Node 20), **MongoDB** running locally (see section 4), an internet connection.
 
-Requires **Node.js 18 or newer** (developed on Node 20).
-
-## 4. Architecture
-
-```
-                         ┌──────────────────────────┐
-   Browser  ───────────► │ React app (Vite, :5173)  │
-                         └───────┬──────────┬───────┘
-              /dashboard, /report│          │ forecast & ticker
-                                 │          ▼
-                                 │   Open-Meteo public API
-                 ┌───────────────┴───────────────┐
-                 ▼                               ▼
-   Node core `http` API (:8100)      Express Router API (:4100)
-   farmers · plots · sensors ·       regions · alerts
-   alerts · reports (JSON files)     (JSON files)
-
-   Stand-alone, used by the Exp-7 lab:
-   Express + MongoDB API (:4200)  ──►  MongoDB  (database "climateintel")
-```
-
-The React app talks to the first two back ends through [src/api/backend.js](src/api/backend.js). The MongoDB API is a
-separate service with the same kind of resources (regions, alerts) stored in a real database.
-
-## 5. Folder structure
-
-```
-kjs-ces-01-forms-nav/
-├── index.html                 Vite entry page
-├── vite.config.js
-├── package.json
-├── .env.example               optional settings (copy to .env)
-├── src/
-│   ├── main.jsx, App.jsx      app bootstrap and routes
-│   ├── api/
-│   │   ├── backend.js         fetch wrappers for the Node and Express APIs
-│   │   └── weather.js         Open-Meteo calls
-│   ├── pages/                 Home, Dashboard, ReportForm, Login, Register,
-│   │                          InPageEditing, StayOnPage, MobileHome, NotFound
-│   ├── components/            Navbar, Footer, Ticker, Badge, InPageEdit
-│   ├── hooks/useDragReorder.js
-│   └── styles/global.css
-├── api/                       Back end 1 – Node core http server (port 8100)
-│   ├── server.js
-│   └── data/*.json            farmers, plots, sensors, alerts, reports (sample data)
-├── api-express/               Back end 2 – Express Router demo (port 4100)
-│   ├── server.js, store.js
-│   ├── routes/regions.js, routes/alerts.js
-│   └── data/*.json
-├── api-mongo/                 Back end 3 – Express + MongoDB (port 4200)
-│   ├── db.js                  shared connection helper
-│   ├── create_db.js, read.js, update.js, delete.js   CRUD scripts
-│   ├── server.js              REST API
-│   └── out/                   captured outputs of a real run
-├── scripts/dev-all.js         starts both JSON back ends and Vite together
-├── docs/screenshots/          images used in this README
-└── *.md                       design and concept notes (see section 17)
-```
-
-## 6. Getting started
+Open a terminal in this folder and run:
 
 ```bash
-# 1. install dependencies
-npm install
-
-# 2. start the front end and the two JSON back ends together
-npm run dev:all
+npm install          # first time only
+npm run dev:all      # starts the live API (port 4300) and the React app (port 5173)
 ```
 
 Then open **http://localhost:5173**.
 
-Prefer separate terminals? Run these in three terminals:
+On the very first start the API fetches the data and computes each city's 10-year normal (about 30 to 90 seconds because the free
+Open-Meteo API limits requests per minute). The dashboard works immediately; heat levels appear once the normals are ready.
+Press `Ctrl+C` to stop both.
 
-```bash
-npm run dev           # React app          → http://localhost:5173
-npm run api           # Node core API      → http://localhost:8100
-npm run api-express   # Express Router API → http://localhost:4100
-```
-
-**Run the dashboard on MongoDB** (needs MongoDB running on `127.0.0.1:27017`, see [section 11](#11-mongodb-part-exp-7)):
-
-```bash
-npm run mongo:create  # once: create database "climateintel" and load sample data
-npm run dev:mongo     # Node API + MongoDB API (:4200) + React app, wired together
-```
-
-Then open http://localhost:5173. The dashboard's regions and alerts now come from MongoDB, and an alert saved in the
-dashboard shows up in MongoDB Compass.
-
-Production build: `npm run build` (output in `dist/`), preview it with `npm run preview`.
-
-## 7. npm scripts
-
-| Script | What it does |
+| Command | What it does |
 |---|---|
-| `dev` | Vite dev server (port 5173) |
-| `dev:all` | Starts Vite + Node API + Express (JSON files) API together; `Ctrl+C` stops all |
-| `dev:mongo` | Same, but the dashboard uses the MongoDB API (:4200) instead of the JSON-file Express API |
-| `build` / `preview` | Production build / serve the build |
-| `api` (`dev:api`) | Node core `http` API on 8100 |
-| `api-express` | Express Router API on 4100 |
-| `api-mongo` | Express + MongoDB API on 4200 |
-| `mongo:create` | Drop and re-create the `climateintel` collections and insert sample data (`insertMany`) |
-| `mongo:read` | Hotspot query (`$gte` 44 °C), Emergency alerts, aggregation per tier |
-| `mongo:update` | `updateOne` / `updateMany` with `$set` and `$inc` |
-| `mongo:delete` | `deleteOne` an expired alert |
+| `npm run dev:all` | Live API + React app together (the normal way to run the project) |
+| `npm run live` | Only the live API (port 4300) |
+| `npm run dev` | Only the React app (port 5173) |
+| `npm test` | Unit tests for the heat classification and date helpers |
+| `npm run build` / `npm run preview` | Production build / serve the build |
 
-## 8. Front end in detail
+Handy checks while it runs:
 
-### Routes
+```bash
+curl http://localhost:4300/api/health      # {"status":"ok","mongo":"connected",...}
+curl http://localhost:4300/api/overview    # regions, cities, stored-data stats
+curl -X POST http://localhost:4300/api/refresh   # fetch from Open-Meteo right now (once a minute at most)
+```
 
-| Path | Page | Purpose |
+## 4. MongoDB setup
+
+The live API needs a MongoDB server. Nothing else has to be configured: the database and collections are created automatically.
+
+1. **Install MongoDB Community Server** and let it run as a service on port **27017**
+   (Windows: the service is named `MongoDB`; check with `Get-Service MongoDB` in PowerShell).
+   Alternative with Docker: `docker run -d -p 27017:27017 --name mongo mongo`.
+2. **Start the project** (`npm run dev:all`). The API creates the database **`climateintel_live`**, its indexes and the 30 city records.
+3. **See the data** in MongoDB Compass: connect to `mongodb://localhost:27017` and open `climateintel_live`.
+   Collections: `observations`, `daily`, `stations`, `alerts`, `reports`, `fetch_log`.
+4. **Another MongoDB?** Set `MONGO_URI` (for example an Atlas connection string) before starting. Never commit a connection string
+   that contains a password; keep it in a git-ignored `.env`.
+
+If MongoDB is not running, the API stops with a clear message instead of failing silently.
+
+## 5. How the data flows
+
+```
+Open-Meteo (public API) ──every 30 min──► live API (Node + Express, port 4300) ──► MongoDB "climateintel_live"
+                                                   ▲                                        │
+                                                   └──────────── reads everything ──────────┘
+                                                   │
+                                          React app (port 5173)   ← the browser never calls Open-Meteo itself
+```
+
+1. **Collect.** On start, and every 30 minutes (`REFRESH_MINUTES`), the collector makes one request to Open-Meteo for all 30 cities.
+   If the last successful run was less than 30 minutes ago, it serves the stored data and waits.
+2. **Store.** New readings are inserted (never overwritten); daily rows are updated as a day completes; every run is logged.
+3. **Evaluate.** Each city is classified against its normal; each region takes the level of its worst city; alerts are raised or cleared.
+4. **Serve.** The React app asks the live API, which answers from MongoDB. The "Fetch latest data" button asks the API to collect right now.
+
+## 6. The data model (collections)
+
+| Collection | One document per | Contents |
 |---|---|---|
-| `/` | Home | Landing page, system explanation, live ticker |
-| `/dashboard` | Dashboard | Tabs: `overview`, `regions` (Regional heat), `field` (AWS monitoring), `alerts`, `reports`, `forecast`. Use `?tab=` to deep-link, e.g. `/dashboard?tab=regions` |
-| `/report` | ReportForm | Observation form with validation, saved through `POST /reports` |
-| `/login` | Login | Strict password policy with live checklist and strength bar |
-| `/register` | Register | Minimal registration validation |
-| `/editing-demo` | InPageEditing | Gallery of the in-page editing patterns |
-| `/stay-on-page` | StayOnPage | Demonstrates staying on the page after submit |
-| `/m` | MobileHome | Phone-style alert list with bottom navigation |
-| `*` | NotFound | 404 page |
+| `stations` | monitoring city (30) | name, region, coordinates, terrain, latest reading, 365 "normal" daily maxima |
+| `observations` | city and reading time | temperature, feels-like, humidity, wind, when it was observed and fetched. **Grows with every refresh** |
+| `daily` | city and date | daily max/min/feels-like max; 30 past days plus today and 4 forecast days; `isForecast` flag |
+| `alerts` | alert | region, level, message, source (`auto` or `manual`), status (`active`, `cleared`, `superseded`), times |
+| `reports` | submitted report | the observation form data, optional image |
+| `fetch_log` | refresh run | when, trigger, success, rows written, duration, error |
 
-### Data flow
+Indexes make `(stationId, observedAt)` and `(stationId, date)` unique, so a reading can never be stored twice.
 
-1. A page mounts and calls a function from `src/api/backend.js` (`nodeApi.dashboard()`, `expressApi.regions()`, …).
-2. Every request has a 15-second timeout and turns non-2xx responses into readable error messages.
-3. The page shows a loading state, then data, or a clear “service not reachable” message if a back end is down.
-4. Temperatures for the ticker and the Forecast tab are fetched live from Open-Meteo (`src/api/weather.js`).
+## 7. How the numbers are made
 
-## 9. Back ends in detail
+- **Source.** Open-Meteo forecast API (current weather + daily values) and its archive API (ERA5 reanalysis, for the normals).
+  Time zone is India Standard Time. 30 cities, 4 to 6 per region, one model point each.
+- **Normal.** For each city and calendar day, the average daily maximum over **2015–2024**, smoothed over ±7 days
+  (a 10-year average, not IMD's official 30-year normal). Computed once on first start and stored.
+- **Classification** (modelled on the IMD heat-wave criteria):
 
-### `api/` — Node core `http` (port 8100)
-Written without any framework to show how `http`, `url` and `fs/promises` work: manual routing on `pathname`, JSON
-responses, CORS headers, 404/500 handling and body parsing. `POST /reports` validates the body (required `plotId`,
-`region`, `status`; temperature −10…60 °C; optional image must be a `data:image/jpeg|png|webp;base64,` URL up to 7 MB)
-and answers **400** with a message when it is wrong. See [api/README.md](api/README.md).
+  | Level | Rule |
+  |---|---|
+  | Hot Day | maximum at or above the threshold and **3 °C or more** above normal |
+  | Heatwave | at or above the threshold and **4.5 °C or more** above normal |
+  | Severe Heatwave | at or above the threshold and **6.5 °C or more** above normal |
 
-### `api-express/` — Express Router (port 4100)
-Modular routing with `express.Router()`: `routes/regions.js` (full CRUD, severity computed from temperature) and
-`routes/alerts.js`, a small JSON store (`store.js`), request-logging middleware, a 404 handler and a central error
-handler. Validation errors return **400** with an `errors` array.
+  Threshold by terrain: **plains 40 °C, coastal 37 °C, hills 30 °C**. Plains cities also count by absolute value: 45 °C = Heatwave, 47 °C = Severe.
+- **Region level.** The level of its worst city (highest level, then biggest departure). The region card shows that city.
+- **Alert tiers.** Hot Day → Watch, Heatwave → Warning, Severe Heatwave → Emergency; Normal → Safe (no alert).
+- **"Today's max"** is the larger of Open-Meteo's expected maximum for today and the latest reading.
+- **Seasonality.** Outside the hot season most cities are normal and there may be no alerts. That is the real situation, not a fault.
 
-### `api-mongo/` — Express + MongoDB (port 4200)
-Same ideas, but data lives in MongoDB (see section 11). Invalid ids and bodies return **400**, unknown ids **404**.
+## 8. Dashboard pages
 
-## 10. REST API reference
+| Tab (`/dashboard?tab=…`) | Shows |
+|---|---|
+| `overview` | Five headline numbers, a card per region (with a 14-day sparkline), hottest cities right now, latest alerts |
+| `regions` | Pick a region: 30-day chart of the hottest city, region average and normal, a day-by-day table, and the region's cities |
+| `stations` | Table of all 30 cities; select one for its 30-day daily max/min chart and stored readings |
+| `alerts` | Active alerts or the full history; form to record an alert; clear your own alerts |
+| `reports` | Observation reports stored in MongoDB (contact details are hidden) |
+| `forecast` | Expected daily maximum for the next days in every region, with the heat level it implies |
+| `data` | Row counts in MongoDB, first/last reading, recent refresh runs, and the method |
 
-### Node core API — `http://localhost:8100`
+Other routes: `/` home, `/report` observation form, `/login`, `/register`, `/editing-demo`, `/stay-on-page` (lab demos), `/m` mobile companion.
+Deep links work, for example `/dashboard?tab=regions&region=west-india` or `/dashboard?tab=stations&station=mumbai`.
+
+## 9. REST API reference
+
+Base URL `http://localhost:4300`. All responses are JSON; errors look like `{ "error": "…" }` or `{ "errors": ["…"] }`.
 
 | Method & path | Description |
 |---|---|
-| `GET /` , `GET /health` | Service overview / health check |
-| `GET /farmers` , `/plots` , `/sensors` | Sample records |
-| `GET /irrigation?plotId=SG-1045` | Irrigation recommendation for a plot |
-| `GET /prediction?plotId=SG-1045` | Next-irrigation prediction |
-| `GET /water-stress?plotId=SG-1045` | Water-stress analysis |
-| `GET /alerts` | Field alerts |
-| `GET /dashboard` | Summary used by the dashboard cards |
-| `GET /reports` , `POST /reports` | List / save an observation (201, or 400 if invalid) |
+| `GET /api/health` | Pings MongoDB |
+| `GET /api/overview` | Regions (with 14-day trend and forecast), cities, summary numbers, stored-data stats |
+| `GET /api/regions/:id/history?days=30` | Daily series for a region (1–90 days, includes forecast) |
+| `GET /api/stations/:id/history?hours=48` | Stored readings (up to 90 days) and all daily rows for a city |
+| `GET /api/alerts?status=active&limit=100` | Alerts, newest first |
+| `POST /api/alerts` | Record an alert `{ region, tier, message, channel? }` → 201, or 400 with the reasons |
+| `POST /api/alerts/:id/clear` | Mark an alert cleared → 200 / 404 |
+| `GET /api/reports` | Observation reports (no email/phone, no image data) |
+| `POST /api/reports` | Save a report (validated; region must be one of the 7) → 201 / 400 |
+| `GET /api/reports/:id/photo` | The report's image, if any |
+| `GET /api/stats` | Collection counts and first/last reading |
+| `GET /api/runs?limit=20` | The refresh log |
+| `POST /api/refresh` | Collect now → 200 with a summary, 429 if called again within a minute, 502 if Open-Meteo is unreachable |
 
-### Express Router API — `http://localhost:4100`
-
-| Method & path | Description |
-|---|---|
-| `GET /api/regions` , `GET /api/regions/:id` | List / one region (with computed `severity`) |
-| `POST /api/regions` | Create (400 on invalid body) |
-| `PUT /api/regions/:id` , `PATCH /api/regions/:id` | Replace / partially update |
-| `DELETE /api/regions/:id` | Delete (404 if missing) |
-| `GET /api/alerts` , `GET /api/alerts/:id` | List / one alert |
-| `POST /api/alerts` | Create; `tier` must be Safe, Watch, Warning or Emergency |
-| `DELETE /api/alerts/:id` | Delete |
-
-### MongoDB API — `http://localhost:4200`
-
-| Method & path | Description |
-|---|---|
-| `GET /` | Service overview |
-| `GET /api/regions` | All regions with severity |
-| `GET /api/hotspots` | Regions with `currentMaxTempC ≥ 44` (a `$gte` query), hottest first |
-| `GET /api/alerts` | All alerts |
-| `POST /api/alerts` | `insertOne` after validation → 201 / 400 |
-| `PATCH /api/alerts/:id` | `findOneAndUpdate` → 200 / 404 |
-| `DELETE /api/alerts/:id` | `deleteOne` → 200 / 404 |
-
-Severity bands used everywhere: **< 40 °C Normal · ≥ 40 Hot Day · ≥ 44 Heatwave · ≥ 47 Severe Heatwave**.
-
-Quick example:
+Region ids: `north-west-india`, `north-east-india`, `east-india`, `central-india`, `west-india`, `south-interior-peninsula`, `south-coastal`.
 
 ```bash
-curl -X POST http://localhost:4100/api/alerts \
-  -H "Content-Type: application/json" \
-  -d '{"region":"Western India","tier":"Emergency","message":"Severe heatwave expected"}'
+curl -X POST http://localhost:4300/api/alerts -H "Content-Type: application/json" \
+  -d '{"region":"West India","tier":"Warning","message":"Avoid outdoor work 12-4 pm"}'
 ```
 
-## 11. MongoDB part (Exp-7)
+## 10. Configuration
 
-Database **`climateintel`**, three collections:
+Everything has a working default; a `.env` file is **not** required. To change something, copy [.env.example](.env.example) to `.env`.
 
-| Collection | Contents |
-|---|---|
-| `regions` | 7 IMD regions with normal/current max temperature and AWS count |
-| `alerts` | Heatwave alerts (id, region, tier, message, channel, issued) |
-| `observations` | AWS readings per station |
-
-How the CRUD operations map to the use case:
-
-| CRUD | Method | Meaning |
+| Variable | Default | Meaning |
 |---|---|---|
-| Create | `insertMany()` | Load regions, alerts and observations |
-| Read | `find()`, `sort()`, `aggregate()` | Hotspots ≥ 44 °C, Emergency alerts, alerts per tier, average reading |
-| Update | `updateOne()`, `updateMany()`, `$set`, `$inc` | Escalate an alert, add an AWS station, flag readings ≥ 45 °C |
-| Delete | `deleteOne()` | Remove an expired Watch alert |
+| `MONGO_URI` | `mongodb://127.0.0.1:27017` | MongoDB connection string |
+| `LIVE_DB_NAME` | `climateintel_live` | Database name |
+| `LIVE_API_PORT` | `4300` | Live API port |
+| `REFRESH_MINUTES` | `30` | How often the API collects from Open-Meteo |
+| `VITE_LIVE_API_URL` | `http://localhost:4300` | Where the React app finds the API |
 
-Run the scripts in order (`mongo:create → mongo:read → mongo:update → mongo:read → mongo:delete`). A real captured run is
-saved in [api-mongo/out/all_runs.txt](api-mongo/out/all_runs.txt). Inspect the data with MongoDB Compass at
-`mongodb://localhost:27017`.
+Fixed in [live-api/config.js](live-api/config.js): the 30 cities, the 7 regions, days of history/forecast, the normal period.
 
-### Using MongoDB from the dashboard
+## 11. Folder structure
 
-What has to be in place:
+```
+├── live-api/                    Live backend (Node + Express + MongoDB)
+│   ├── server.js                REST API, validation, error handling
+│   ├── collector.js             fetch → store → normals → alerts, and the scheduler
+│   ├── openmeteo.js             Open-Meteo client (timeouts, retries, rate-limit wait)
+│   ├── queries.js               overview, history, trends, stats
+│   ├── severity.js              classification, normals, IST helpers (pure functions)
+│   ├── severity.test.js         unit tests (npm test)
+│   ├── db.js, config.js         connection and indexes / settings, cities, regions
+├── src/                         React app
+│   ├── api/live.js              the only API client (talks to live-api)
+│   ├── context/LiveData.jsx     shared overview data, re-read every 5 minutes
+│   ├── pages/                   Home, Dashboard, ReportForm, Login, Register, MobileHome, demos
+│   │   └── dashboard/           Overview, Regions, Stations, Alerts, Reports, Forecast, DataTab
+│   ├── components/              Navbar, Ticker, Footer, Badge, InPageEdit
+│   │   └── live/                LineChart, Sparkline, shared table/stat components
+│   └── styles/                  global.css (base) + live.css (dashboard and home)
+├── api/  api-express/  api-mongo/   lab back ends from Exp-5/6/7 (sample data, not used by the dashboard)
+├── scripts/dev-all.js           starts live-api + Vite together
+├── docs/screenshots/            images used in this README
+└── *.md                         design and concept notes (section 16)
+```
 
-1. **MongoDB running locally** on port 27017 – install MongoDB Community Server (it runs as a Windows service named
-   `MongoDB`), or start one with Docker: `docker run -d -p 27017:27017 --name mongo mongo`.
-2. **Sample data loaded once**: `npm run mongo:create` (creates `climateintel` with `regions`, `alerts`, `observations`;
-   it **drops and re-creates** those collections, so do not run it if you want to keep changes).
-3. **Start in Mongo mode**: `npm run dev:mongo`. This runs the MongoDB API on port 4200 and starts the React app with
-   `VITE_EXPRESS_API_URL=http://localhost:4200`, so the dashboard reads and writes regions and alerts in MongoDB.
-4. **Look at the data**: open MongoDB Compass, connect to `mongodb://localhost:27017` and open `climateintel`.
-
-Only **regions and alerts** live in MongoDB. Farmers, plots, sensors and submitted observation reports are still served
-by the Node API from the JSON files in `api/data/`. To use a different MongoDB, set `MONGO_URI` (for example an Atlas
-connection string) before starting; never commit a connection string that contains a password.
-
-## 12. Configuration
-
-Everything has a working default, so **no `.env` file is required**. To change something, copy
-[.env.example](.env.example) to `.env`:
-
-| Variable | Default | Used by |
-|---|---|---|
-| `VITE_NODE_API_URL` | `http://localhost:8100` | React app |
-| `VITE_EXPRESS_API_URL` | `http://localhost:4100` | React app (`dev:mongo` sets it to `http://localhost:4200`) |
-| `MONGO_URI` | `mongodb://127.0.0.1:27017` | `api-mongo/` |
-| `PORT` | 8100 / 4100 / 4200 | each back end |
-
-`.env` files are git-ignored.
-
-## 13. Form validation rules
-
-- **Name** – letters only, words separated by a single space, hyphen or apostrophe.
-- **E-mail** – standard pattern; **phone** – Indian 10-digit mobile (`^[6-9]\d{9}$`), non-digits are stripped while typing.
-- **Login ID** – 4–20 characters, letters and digits, with `_` or `.` allowed inside (not at the ends); **password** – ≥ 8 characters with upper, lower, digit and symbol, no spaces
-  (a live checklist and a strength bar show progress).
-- **Register** – name not empty, e-mail contains `@`, password ≥ 6 characters (the exact lab wording).
-- **Observation** – temperature −10…60 °C, valid URL/date, optional JPEG/PNG/WebP photo (≤ 7 MB).
-- Every error message starts with a code such as `ERR_REQUIRED`, `ERR_INVALID_PHONE`, `ERR_WEAK_PASSWORD`.
-
-The server repeats the important checks, so invalid data is rejected even if someone bypasses the form.
-
-## 14. Testing the project
-
-There is no automated test suite; the project was verified manually and with scripts:
+## 12. Tests
 
 ```bash
-npm run build                                   # compiles all 51 modules
-curl http://localhost:8100/health               # {"status":"ok","service":"kjs-ces-01-node-backend","port":8100}
-curl http://localhost:4100/api/regions          # 7 regions
-curl -X POST http://localhost:4100/api/alerts -H "Content-Type: application/json" -d '{"tier":"Bad"}'   # 400
+npm test      # 9 unit tests: heat levels for plains/coastal/hills, absolute 45/47 °C rule, missing data,
+              # normals averaging and smoothing, 29 February handling, India-time helpers
+npm run build # compiles the React app
 ```
 
-Open every route listed in section 8 and confirm that the browser console shows no errors.
+The collector, MongoDB queries and every dashboard tab were also checked against the real Open-Meteo API and a real MongoDB:
+a fetch stores new readings, a browser reload shows the same totals, a restart keeps the history, forms save to the database.
 
-## 15. Security and privacy notes
+## 13. The lab back ends (Exp-5, 6, 7)
 
-- No API keys, passwords, tokens or `.env` files are committed; Open-Meteo needs no key.
-- Sample data only. Phone numbers in `api/data/farmers.json` are masked (`+91 XXXXX XXXXX`), names are fictitious.
-- The Login/Register pages validate input **in the browser only** – there is no real authentication. Do not deploy this as
-  a real login system.
-- CORS is open (`cors()`) and MongoDB is used without credentials because everything is meant for **local development**.
-  Restrict origins and enable MongoDB authentication before any public deployment.
-- Uploaded photos are only accepted as base64 data URLs of three image types and are size-limited.
+These were written for the lab experiments and are **kept for reference**. They use deliberately small **sample data** and the dashboard no longer
+uses them.
 
-## 16. Troubleshooting
+| Folder | Port | Technique | Run |
+|---|---|---|---|
+| `api/` | 8100 | Node core `http`, `url`, `fs/promises`; irrigation sample data | `npm run api` |
+| `api-express/` | 4100 | Express Router, JSON files, validation | `npm run api-express` |
+| `api-mongo/` | 4200 | Express + MongoDB CRUD scripts (database `climateintel`, separate from the live one) | `npm run mongo:create`, `mongo:read`, `mongo:update`, `mongo:delete`, `api-mongo` |
+
+See [api/README.md](api/README.md) for the Node core API routes.
+
+## 14. Security and privacy
+
+- No API keys, passwords or tokens exist in the code; Open-Meteo needs none. `.env` files are git-ignored.
+- Reporter **email and phone are stored but never returned** by the reports list; the form data is validated on the server too.
+- Uploaded images are limited to JPEG/PNG/WebP up to 7 MB.
+- **Local development setup:** CORS is open and MongoDB runs without a password. Before any public deployment, restrict origins,
+  enable MongoDB authentication, and add authentication to the write endpoints (alerts, reports, refresh).
+- The Login and Register pages are validation demos; there is no real authentication.
+- Please keep the Open-Meteo attribution (it is shown on the dashboard and in the footer) and respect their free-tier limits.
+
+## 15. Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| Dashboard says a service is not reachable | Start the back ends (`npm run dev:all`) |
-| `EADDRINUSE` on a port | Another process uses it – stop it or set `PORT=…` |
-| `MongoServerSelectionError` / Mongo API does not start | MongoDB is not running – start the `MongoDB` service (or the Docker container), or use `npm run dev:all` instead |
-| Dashboard still shows the old JSON data | You started with `dev:all`; stop it and run `npm run dev:mongo` |
-| Blank page / stale code after pulling | Delete `node_modules` and `dist`, then `npm install` |
-| Forecast tab empty | No internet – Open-Meteo is the only external call |
+| "The live data service is not reachable" | Start it: `npm run dev:all` (or `npm run live`) |
+| API stops with "Could not connect to MongoDB" | Start the MongoDB service (or Docker container), then run again |
+| Heat levels show "Normal" everywhere | Normal outside the hot season; check the Data tab for the real numbers |
+| First start is slow | It is computing the 10-year normals; the free API limits requests per minute |
+| `Fetch latest data` says "Try again in N s" | A refresh just ran; the button is limited to once a minute |
+| "Open-Meteo could not be reached" | No internet or the service is busy; stored data stays available and the next scheduled run retries |
+| `EADDRINUSE` | Another program uses port 4300 or 5173; stop it or change `LIVE_API_PORT` |
+| Want a clean database | In MongoDB drop `climateintel_live`; it is rebuilt on the next start (history restarts from the last 30 days) |
 
-## 17. Further documentation
+## 16. Further documentation
 
-- [CODEBASE_GUIDE.md](CODEBASE_GUIDE.md) – file-by-file walkthrough of the front end
-- [CONCEPTS_GUIDE.md](CONCEPTS_GUIDE.md) – React / forms concepts explained with examples from this code
-- [IMPLEMENTATION.md](IMPLEMENTATION.md) and [EXPLANATION.md](EXPLANATION.md) – how each lab requirement was implemented
-- [PROJECT_EXPLANATION.md](PROJECT_EXPLANATION.md) – project goals and structure
-- [design.md](design.md) – design blueprint (layout, palette, components)
-- [api/README.md](api/README.md) – Node core API notes
+- [CODEBASE_GUIDE.md](CODEBASE_GUIDE.md), [CONCEPTS_GUIDE.md](CONCEPTS_GUIDE.md): earlier lab walkthroughs of the front end and React/forms concepts
+- [IMPLEMENTATION.md](IMPLEMENTATION.md), [EXPLANATION.md](EXPLANATION.md), [PROJECT_EXPLANATION.md](PROJECT_EXPLANATION.md): how the lab requirements were implemented
+  (written before the live-data rewrite, so parts describe the old sample-data back ends)
+- [design.md](design.md): design blueprint (layout, palette, components)
+- [api/README.md](api/README.md): Node core API notes
+
+Weather data by [Open-Meteo.com](https://open-meteo.com/), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
