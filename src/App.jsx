@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import StayOnPage from "./pages/StayOnPage.jsx";
 import MobileHome from "./pages/MobileHome.jsx";
 import NotFound from "./pages/NotFound.jsx";
+import { LiveDataProvider } from "./context/LiveData.jsx";
 
 export default function App() {
   const location = useLocation();
@@ -21,6 +22,7 @@ export default function App() {
   const isMobileCompanion = location.pathname === "/m";
 
   return (
+    <LiveDataProvider>
     <div className="app-shell">
       {!isMobileCompanion && <Navbar />}
       {!isMobileCompanion && <Ticker />}
@@ -39,5 +41,6 @@ export default function App() {
       </main>
       {!isMobileCompanion && <Footer />}
     </div>
+    </LiveDataProvider>
   );
 }
