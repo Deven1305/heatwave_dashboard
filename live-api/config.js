@@ -1,0 +1,65 @@
+// Live data backend - settings and the fixed list of regions and monitoring points.
+// Nothing in here is measurement data: it only says WHERE to ask Open-Meteo for weather.
+
+export const PORT = Number(process.env.LIVE_API_PORT) || 4300;
+export const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017';
+export const DB_NAME = process.env.LIVE_DB_NAME || 'climateintel_live';
+export const REFRESH_MINUTES = Number(process.env.REFRESH_MINUTES) || 30;
+export const HISTORY_DAYS = 30;        // days of past daily data fetched on every refresh
+export const FORECAST_DAYS = 5;        // days of forecast stored with it
+export const NORMAL_YEARS = [2015, 2024]; // period used to compute each station's "normal" daily maximum
+export const FRESH_MINUTES = 180;      // a station counts as "reporting" if its latest reading is newer than this
+
+export const TIERS = ['Safe', 'Watch', 'Warning', 'Emergency'];
+
+// Same 7 names as the observation form, so a report always matches a region.
+export const REGIONS = [
+  { id: 'north-west-india', name: 'North-West India' },
+  { id: 'north-east-india', name: 'North-East India' },
+  { id: 'east-india', name: 'East India' },
+  { id: 'central-india', name: 'Central India' },
+  { id: 'west-india', name: 'West India' },
+  { id: 'south-interior-peninsula', name: 'South Interior Peninsula' },
+  { id: 'south-coastal', name: 'South Coastal (incl. Islands)' },
+];
+
+// Representative cities (real coordinates). terrain decides the heat-wave threshold (see severity.js).
+const S = (id, name, regionId, lat, lon, terrain = 'plains') => ({ id, name, regionId, lat, lon, terrain });
+export const STATIONS = [
+  S('delhi', 'Delhi', 'north-west-india', 28.61, 77.21),
+  S('jaipur', 'Jaipur', 'north-west-india', 26.91, 75.79),
+  S('amritsar', 'Amritsar', 'north-west-india', 31.63, 74.87),
+  S('jodhpur', 'Jodhpur', 'north-west-india', 26.29, 73.02),
+  S('srinagar', 'Srinagar', 'north-west-india', 34.08, 74.8, 'hills'),
+  S('shimla', 'Shimla', 'north-west-india', 31.1, 77.17, 'hills'),
+
+  S('guwahati', 'Guwahati', 'north-east-india', 26.14, 91.74),
+  S('agartala', 'Agartala', 'north-east-india', 23.83, 91.28),
+  S('imphal', 'Imphal', 'north-east-india', 24.82, 93.94, 'hills'),
+  S('dibrugarh', 'Dibrugarh', 'north-east-india', 27.48, 94.91),
+
+  S('kolkata', 'Kolkata', 'east-india', 22.57, 88.36),
+  S('bhubaneswar', 'Bhubaneswar', 'east-india', 20.3, 85.82),
+  S('patna', 'Patna', 'east-india', 25.59, 85.14),
+  S('ranchi', 'Ranchi', 'east-india', 23.34, 85.31),
+
+  S('nagpur', 'Nagpur', 'central-india', 21.15, 79.09),
+  S('bhopal', 'Bhopal', 'central-india', 23.26, 77.41),
+  S('raipur', 'Raipur', 'central-india', 21.25, 81.63),
+  S('jabalpur', 'Jabalpur', 'central-india', 23.18, 79.95),
+
+  S('ahmedabad', 'Ahmedabad', 'west-india', 23.02, 72.57),
+  S('mumbai', 'Mumbai', 'west-india', 19.08, 72.88, 'coastal'),
+  S('pune', 'Pune', 'west-india', 18.52, 73.86),
+  S('surat', 'Surat', 'west-india', 21.17, 72.83),
+
+  S('hyderabad', 'Hyderabad', 'south-interior-peninsula', 17.38, 78.48),
+  S('bengaluru', 'Bengaluru', 'south-interior-peninsula', 12.97, 77.59),
+  S('madurai', 'Madurai', 'south-interior-peninsula', 9.93, 78.12),
+  S('kurnool', 'Kurnool', 'south-interior-peninsula', 15.83, 78.04),
+
+  S('chennai', 'Chennai', 'south-coastal', 13.08, 80.27, 'coastal'),
+  S('kochi', 'Kochi', 'south-coastal', 9.93, 76.27, 'coastal'),
+  S('visakhapatnam', 'Visakhapatnam', 'south-coastal', 17.69, 83.22, 'coastal'),
+  S('port-blair', 'Port Blair', 'south-coastal', 11.62, 92.73, 'coastal'),
+];
