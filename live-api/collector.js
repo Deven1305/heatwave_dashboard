@@ -106,11 +106,11 @@ export async function evaluateAlerts(db) {
       if (r.level === 0) cleared += 1;
     }
     if (r.level > 0) {
-      const dep = r.departureC === null ? '' : ` (${r.departureC >= 0 ? '+' : ''}${r.departureC} C from the normal ${r.normalC} C)`;
+      const dep = r.departureC === null ? '' : ` (${r.departureC >= 0 ? '+' : ''}${r.departureC} °C from the normal ${r.normalC} °C)`;
       await alerts.insertOne({
         _id: `HW-${istDate(now).replace(/-/g, '')}-${randomBytes(3).toString('hex').toUpperCase()}`,
         regionId: r.id, region: r.name, tier: r.tier, level: r.level, severity: r.severity,
-        message: `${r.severity} conditions: ${r.peakStation} expects a maximum of ${r.todayMaxC} C today${dep}. Indicative, based on Open-Meteo data.`,
+        message: `${r.severity} conditions: ${r.peakStation} expects a maximum of ${r.todayMaxC} °C today${dep}. Indicative, based on Open-Meteo data.`,
         channel: 'Dashboard', issuedAt: now, status: 'active', source: 'auto',
         basis: { station: r.peakStation, todayMaxC: r.todayMaxC, normalC: r.normalC, departureC: r.departureC },
       });
