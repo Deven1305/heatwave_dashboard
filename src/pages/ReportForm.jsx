@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { nodeApi } from "../api/backend.js";
+import { liveApi } from "../api/live.js";
 
 /**
  * KJS-CES-01 — Exp-3: Form Handling & Form Validation in React
@@ -248,7 +248,7 @@ export default function ReportForm() {
       setSubmissionError("");
       try {
         const photo = await readPhoto(form.photo);
-        const record = await nodeApi.createReport({
+        const record = await liveApi.createReport({
           plotId: `${form.stationState}-${form.stationNumber}`,
           region: form.region,
           status: `Reported ${form.severity} heat observation`,
