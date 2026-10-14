@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "dev:all": "node scripts/dev-all.js",
+    "dev:mongo": "node scripts/dev-all.js --mongo",
     "build": "vite build",
     "preview": "vite preview",
     "api": "node api/server.js",
