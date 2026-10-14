@@ -226,7 +226,7 @@ This computes an estimate of stress risk based on moisture and temperature.
 ### Frontend
 
 ```bash
-cd "D:\Deven\1_Hackathon_proj\kj\1-Friday\exp3\KJS-CES-01_Exp3-Form-Validation_ReactRouter-Dashboard\kjs-ces-01-forms-nav"
+cd kjs-ces-01-forms-nav
 npm install
 npm run dev -- --host 0.0.0.0
 ```
@@ -238,7 +238,7 @@ Then open:
 ### Backend
 
 ```bash
-cd "D:\Deven\1_Hackathon_proj\kj\1-Friday\exp3\KJS-CES-01_Exp3-Form-Validation_ReactRouter-Dashboard\kjs-ces-01-forms-nav"
+cd kjs-ces-01-forms-nav
 npm run api
 ```
 
