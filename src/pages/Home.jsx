@@ -7,7 +7,7 @@ import { levelColor } from "../components/live/format.js";
 const STEPS = [
   ["01", "Collect", "Every 30 minutes the live API asks Open-Meteo for the current weather, the last 30 days and the coming days of 30 Indian cities."],
   ["02", "Store", "MongoDB keeps every reading and every daily value. Reload the page or restart the server and the history is still there."],
-  ["03", "Alert", "Each city is compared with its own 10-year normal using IMD-style heatwave rules. A region's alert follows its worst city."],
+  ["03", "Alert", "Each city is compared with its own multi-year normal using IMD-style heatwave rules. A region's alert follows its worst city."],
 ];
 
 const FEATURES = [
@@ -105,7 +105,7 @@ export default function Home() {
           <h3>About the data</h3>
           <p>
             Weather comes from <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a> (free, CC BY 4.0): model data for one point
-            per city, not readings from IMD weather stations. "Normal" is the 2015–2024 average, and the heat levels are an indicative
+            per city, not readings from IMD weather stations. "Normal" is a multi-year average, and the heat levels are an indicative
             classification, not an official warning. Use IMD bulletins for decisions.
           </p>
         </div>

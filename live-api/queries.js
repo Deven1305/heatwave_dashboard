@@ -51,7 +51,8 @@ export async function loadState(db, now = new Date()) {
       normalsReady: members.every((s) => s.normalC !== null),
     };
   });
-  return { today, stations: rows, regions };
+  const periods = [...new Set(stations.map((s) => s.normalsMeta?.years).filter(Boolean))];
+  return { today, stations: rows, regions, normalPeriod: periods.length ? periods.join(' / ').replace(/-/g, '–') : null };
 }
 
 // Per region: daily maximum for the last trendDays (up to today) and the stored forecast for the next days.

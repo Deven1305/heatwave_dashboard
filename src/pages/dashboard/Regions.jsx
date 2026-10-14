@@ -7,7 +7,7 @@ import { dayMs } from "../../components/live/format.js";
 const LINES = [
   { key: "maxC", label: "Hottest city", color: "#f6ad55", width: 2.4 },
   { key: "avgMaxC", label: "Region average", color: "#71b4cb", width: 1.8 },
-  { key: "normalAvgC", label: "Normal (2015–2024)", color: "#9fb3c2", dash: "5 4", width: 1.6 },
+  { key: "normalAvgC", label: "Normal", color: "#9fb3c2", dash: "5 4", width: 1.6 },
 ];
 
 export default function Regions({ overview, params, goTo }) {
@@ -46,7 +46,7 @@ export default function Regions({ overview, params, goTo }) {
         <Stat label="Condition today" value={<SeverityBadge tier={region.tier} severity={region.severity} />} note={`${region.stationsReporting}/${region.stationsTotal} cities reporting`} />
         <Stat label="Peak city" value={region.peakStation || "—"} note="highest heat stress today" />
         <Stat label="Today's max" value={fmtTemp(region.todayMaxC)} note={`normal ${fmtTemp(region.normalC)}`} />
-        <Stat label="Departure from normal" value={fmtDep(region.departureC)} note="peak city, 2015–2024 average" tone={region.departureC > 3 ? "warn" : undefined} />
+        <Stat label="Departure from normal" value={fmtDep(region.departureC)} note={`peak city, ${overview.normalPeriod || "multi-year"} average`} tone={region.departureC > 3 ? "warn" : undefined} />
       </div>
 
       <section className="panel">

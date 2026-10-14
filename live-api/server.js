@@ -53,7 +53,7 @@ app.get('/api/overview', wrap(async (req, res) => {
       hottestNow: state.stations.filter((x) => x.nowC !== null).sort((a, b) => b.nowC - a.nowC)[0] ?? null,
     },
     stored: s, source: { name: 'Open-Meteo', url: 'https://open-meteo.com', licence: 'CC BY 4.0' },
-    normalsReady: state.stations.every((x) => x.normalC !== null),
+    normalsReady: state.stations.every((x) => x.normalC !== null), normalPeriod: state.normalPeriod,
   });
 }));
 
