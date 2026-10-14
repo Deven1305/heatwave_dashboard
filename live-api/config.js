@@ -7,7 +7,10 @@ export const DB_NAME = process.env.LIVE_DB_NAME || 'climateintel_live';
 export const REFRESH_MINUTES = Number(process.env.REFRESH_MINUTES) || 30;
 export const HISTORY_DAYS = 30;        // days of past daily data fetched on every refresh
 export const FORECAST_DAYS = 5;        // days of forecast stored with it
-export const NORMAL_YEARS = [2015, 2024]; // period used to compute each station's "normal" daily maximum
+// Period used to compute each city's "normal" daily maximum. Open-Meteo's free tier allows 5,000 weighted calls per hour and
+// one year of daily data for one city costs about 26, so 6 years x 30 cities (about 4,700) fits in one hour. Longer periods still
+// work (NORMAL_START_YEAR=2015), they just take two hours to complete on a cold start.
+export const NORMAL_YEARS = [Number(process.env.NORMAL_START_YEAR) || 2019, 2024];
 export const FRESH_MINUTES = 180;      // a station counts as "reporting" if its latest reading is newer than this
 
 export const TIERS = ['Safe', 'Watch', 'Warning', 'Emergency'];

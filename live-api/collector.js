@@ -69,8 +69,8 @@ export async function ensureNormals(db) {
   if (!missing.length) return 0;
   log(`computing normals for ${missing.length} stations from ${NORMAL_YEARS[0]}-${NORMAL_YEARS[1]} daily maxima...`);
   let done = 0;
-  for (let i = 0; i < missing.length; i += 5) {
-    const chunk = missing.slice(i, i + 5);
+  for (let i = 0; i < missing.length; i += 3) {
+    const chunk = missing.slice(i, i + 3);
     try {
       const series = await fetchDailyMaxHistory(chunk, NORMAL_YEARS[0], NORMAL_YEARS[1]);
       await db.collection('stations').bulkWrite(chunk.map((s, k) => ({
@@ -81,6 +81,10 @@ export async function ensureNormals(db) {
       })));
       done += chunk.length;
     } catch (error) {
+      if (error.rateLimited) {
+        log(`Open-Meteo ${error.rateLimited} limit reached: ${done}/${missing.length} normals stored, the rest follow on the next cycle`);
+        return done;
+      }
       log('normals batch failed (will retry next cycle):', error.message);
     }
     await sleep(800);
