@@ -10,6 +10,8 @@
     "dev:mongo": "node scripts/dev-all.js --mongo",
     "build": "vite build",
     "preview": "vite preview",
+    "live": "node live-api/server.js",
+    "test": "node --test live-api/",
     "api": "node api/server.js",
     "dev:api": "node api/server.js",
     "api-express": "node api-express/server.js",
