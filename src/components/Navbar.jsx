@@ -3,11 +3,12 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 
 const dashLinks = [
   { label: "Overview", tab: "overview" },
-  { label: "Regional Heat", tab: "regions" },
-  { label: "AWS Monitoring", tab: "field" },
+  { label: "Regions", tab: "regions" },
+  { label: "Stations", tab: "stations" },
   { label: "Alerts", tab: "alerts" },
   { label: "Reports", tab: "reports" },
   { label: "Forecast", tab: "forecast" },
+  { label: "Data", tab: "data" },
 ];
 
 export default function Navbar() {
@@ -35,11 +36,6 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
-            <li>
-              <NavLink to="/report" className={({ isActive }) => (isActive ? "active" : "")}>
-                Report Observation
-              </NavLink>
-            </li>
           </ul>
         </nav>
 
