@@ -211,7 +211,7 @@ Read left to right:
   ü, ø, etc.) so names like "José" or "Renée" aren't wrongly rejected.
 - `(?:[ '-][A-Za-zÀ-ɏ]+)*` — a **non-capturing group**, repeated zero or
   more times, that allows a single space / apostrophe / hyphen followed by
-  more letters. This is what allows multi-part names: `"Deven Sharma"`,
+  more letters. This is what allows multi-part names: `"Priya Nair"`,
   `"Mary-Jane"`, `"O'Brien"` — but blocks two spaces in a row, a leading/
   trailing space, a name starting with a hyphen, digits anywhere, or any
   other symbol (`@ # $ % _ + = . , ! ?` etc.).
@@ -219,7 +219,7 @@ Read left to right:
 So `NAME_RE.test(...)` returns:
 | Input | Result | Why |
 |---|---|---|
-| `"Deven Sharma"` | ✅ pass | letters + one space |
+| `"Priya Nair"` | ✅ pass | letters + one space |
 | `"O'Brien"` | ✅ pass | apostrophe allowed |
 | `"Mary-Jane"` | ✅ pass | hyphen allowed |
 | `"José"` | ✅ pass | accented letters covered by `À-ɏ` |
@@ -264,7 +264,7 @@ On the `<input>` itself:
   onChange={(e) =>
     set("observerName", e.target.value.replace(/[^A-Za-zÀ-ɏ '-]/g, ""))
   }
-  placeholder="e.g. Deven Sharma"
+  placeholder="e.g. Priya Nair"
 />
 <span className="hint">Letters only — no numbers or symbols.</span>
 ```
@@ -350,12 +350,12 @@ Failing the regex on submit produces a red inline message with code
 
 | Input | Result |
 |---|---|
-| `deven.sharma` | ✅ |
+| `priya.nair` | ✅ |
 | `dev_01` | ✅ |
 | `dev` | ❌ too short (3 chars, min is 4) |
-| `.deven` | ❌ starts with `.` |
-| `deven sharma` | ❌ space stripped live, never even reaches the field |
-| `deven@sharma` | ❌ `@` stripped live |
+| `.priya` | ❌ starts with `.` |
+| `priya nair` | ❌ space stripped live, never even reaches the field |
+| `priya@nair` | ❌ `@` stripped live |
 
 ### 4.2 Password validation
 

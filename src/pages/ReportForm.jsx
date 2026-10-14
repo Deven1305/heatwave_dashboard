@@ -331,7 +331,7 @@ export default function ReportForm() {
             type="text"
             value={form.observerName}
             onChange={(e) => set("observerName", e.target.value.replace(/[^A-Za-zÀ-ɏ '-]/g, ""))}
-            placeholder="e.g. Deven Sharma"
+            placeholder="e.g. Priya Nair"
           />
           <span className="hint">Letters only — no numbers or symbols.</span>
           <FieldError error={errors.observerName} />

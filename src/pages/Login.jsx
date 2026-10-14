@@ -129,7 +129,7 @@ export default function Login() {
             type="text"
             value={loginId}
             onChange={(e) => setLoginId(e.target.value.replace(/[^A-Za-z0-9_.]/g, ""))}
-            placeholder="e.g. deven.sharma"
+            placeholder="e.g. priya.nair"
             autoComplete="username"
           />
           <span className="hint">Letters, digits, underscore ( _ ) or dot ( . ) only — no spaces or symbols.</span>

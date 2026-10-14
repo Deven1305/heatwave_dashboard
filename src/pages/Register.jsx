@@ -115,7 +115,7 @@ export default function Register() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Deven Sharma"
+            placeholder="e.g. Priya Nair"
           />
           <FieldError error={errors.name} />
         </div>
