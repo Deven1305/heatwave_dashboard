@@ -5,6 +5,8 @@ import { parseIst } from './severity.js';
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const ARCHIVE_URL = 'https://archive-api.open-meteo.com/v1/archive';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+let rateLimitWaitMs = 62000;
+export const setRateLimitWait = (ms) => { rateLimitWaitMs = ms; }; // tests only
 
 async function getJson(url, { retries = 3, timeoutMs = 30000 } = {}) {
   let lastError;
@@ -14,8 +16,14 @@ async function getJson(url, { retries = 3, timeoutMs = 30000 } = {}) {
       if (res.ok) return await res.json();
       const body = await res.text().catch(() => '');
       lastError = new Error(`Open-Meteo HTTP ${res.status} ${body.slice(0, 160)}`);
+      if (res.status === 429) {
+        if (!/minutely/i.test(body)) { // hourly or daily quota: waiting a minute will not help, so stop and let the caller retry later
+          lastError.rateLimited = /daily/i.test(body) ? 'daily' : 'hourly';
+          break;
+        }
+        if (attempt < retries) { await sleep(rateLimitWaitMs); continue; } // per-minute limit: wait it out
+      }
       if (res.status < 500 && res.status !== 429) break; // our request is wrong: retrying will not help
-      if (res.status === 429 && attempt < retries) { await sleep(62000); continue; } // per-minute limit: wait it out
     } catch (error) {
       lastError = error;
     }
