@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Badge from "../components/Badge.jsx";
-import { expressApi } from "../api/backend.js";
+import { formatDateTime, liveApi } from "../api/live.js";
 
 /**
  * KJS-CES-01 — ClimateIntel Mobile companion (Item 5).
@@ -86,7 +86,7 @@ export default function MobileHome() {
   }, []);
 
   useEffect(() => {
-    expressApi.alerts().then(setAlerts).catch((cause) => setAlertError(cause.message || "Could not load alerts.")).finally(() => setLoadingAlerts(false));
+    liveApi.alerts("", 30).then(setAlerts).catch((cause) => setAlertError(cause.message || "Could not load alerts.")).finally(() => setLoadingAlerts(false));
   }, []);
 
   if (booting) {
@@ -100,7 +100,7 @@ export default function MobileHome() {
     );
   }
 
-  const emergencyAlert = alerts.find((a) => a.tier === "Emergency");
+  const emergencyAlert = alerts.find((a) => a.tier === "Emergency" && a.status === "active");
 
   return (
     <div className="m-shell">
@@ -130,7 +130,7 @@ export default function MobileHome() {
             </div>
             <div className="m-alert-region">{a.region}</div>
             <div className="m-alert-message">{a.message}</div>
-            <div className="m-alert-meta mono">{a.issued} · {a.channel}</div>
+            <div className="m-alert-meta mono">{formatDateTime(a.issuedAt)} · {a.channel} · {a.status}</div>
           </div>
         ))}
       </main>
