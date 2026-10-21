@@ -3,6 +3,8 @@ import { fmtDep, fmtTemp, formatDay, liveApi, timeAgo } from "../../api/live.js"
 import { DataTable, ErrorState, Loading, SeverityBadge, Stat } from "../../components/live/ui.jsx";
 import LineChart from "../../components/live/LineChart.jsx";
 import { dayMs } from "../../components/live/format.js";
+import SearchBox from "../../components/live/SearchBox.jsx";
+import usePlaceSearch from "../../hooks/usePlaceSearch.js";
 
 const LINES = [
   { key: "maxC", label: "Hottest city", color: "#f6ad55", width: 2.4 },
@@ -10,15 +12,21 @@ const LINES = [
   { key: "normalAvgC", label: "Normal", color: "#9fb3c2", dash: "5 4", width: 1.6 },
 ];
 
-export default function Regions({ overview, params, goTo }) {
+export default function Regions({ overview, params, goTo, setParam }) {
   const regions = overview.regions;
-  const selectedId = regions.some((r) => r.id === params.get("region")) ? params.get("region") : regions[0].id;
+  const q = params.get("q") || "";
+  const { result, loading: searching, error: searchError } = usePlaceSearch(q);
+  // with a search active, only regions that contain a matching city (or are named by it) are offered
+  const visible = q.trim() ? (result ? regions.filter((r) => result.regions.has(r.id)) : []) : regions;
+  const selectedId = visible.find((r) => r.id === params.get("region"))?.id ?? visible[0]?.id ?? null;
   const region = regions.find((r) => r.id === selectedId);
+  const matchingCities = result ? overview.stations.filter((s) => result.stations.has(s.id)) : [];
   const [days, setDays] = useState(30);
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
+    if (!selectedId) return undefined;
     let live = true;
     setState((s) => ({ ...s, loading: true, error: "" }));
     liveApi.regionHistory(selectedId, days)
@@ -32,10 +40,41 @@ export default function Regions({ overview, params, goTo }) {
   const firstForecast = series.find((d) => d.isForecast);
   const members = overview.stations.filter((s) => s.regionId === selectedId).sort((a, b) => (b.nowC ?? -99) - (a.nowC ?? -99));
 
+  const searchBox = (
+    <SearchBox
+      value={q}
+      onChange={(v) => setParam("q", v)}
+      placeholder="Search a region, city, state or keyword: himalaya, coastal, Gujarat…"
+      status={searchError || (q.trim() ? (searching && !result ? "Searching…" : `${visible.length} region(s), ${matchingCities.length} city match(es)`) : "")}
+    />
+  );
+
+  if (!region) {
+    return (
+      <div className="dashboard-stack">
+        {searchBox}
+        <div className="data-state">
+          {q.trim() ? (result || searchError ? `Nothing matches “${q.trim()}”. Try a region, city, state, or words like coastal, hills, himalaya.` : "Searching…") : "No regions."}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-stack">
+      {searchBox}
+      {q.trim() && matchingCities.length > 0 && (
+        <div className="lv-matches" aria-label="Matching cities">
+          <span>Matching cities:</span>
+          {matchingCities.map((s) => (
+            <button key={s.id} className="lv-match" onClick={() => goTo("stations", { station: s.id, q })}>
+              {s.name} <small>{s.severity}</small>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="lv-pills" role="tablist" aria-label="Region">
-        {regions.map((r) => (
+        {visible.map((r) => (
           <button key={r.id} role="tab" aria-selected={r.id === selectedId} className={`lv-pill lv-pill-${r.level} ${r.id === selectedId ? "active" : ""}`} onClick={() => goTo("regions", { region: r.id })}>
             {r.name}
           </button>
