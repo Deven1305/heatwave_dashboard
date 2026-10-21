@@ -27,7 +27,22 @@ export const REGIONS = [
 ];
 
 // Representative cities (real coordinates). terrain decides the heat-wave threshold (see severity.js).
-const S = (id, name, regionId, lat, lon, terrain = 'plains') => ({ id, name, regionId, lat, lon, terrain });
+// State and search keywords per city (used by the search box, stored on each station document).
+const PLACE = {
+  delhi: ['Delhi'], jaipur: ['Rajasthan'], amritsar: ['Punjab'], jodhpur: ['Rajasthan', 'thar desert'],
+  srinagar: ['Jammu and Kashmir', 'himalaya himalayas kashmir valley mountain'], shimla: ['Himachal Pradesh', 'himalaya himalayas hill station mountain'],
+  guwahati: ['Assam', 'brahmaputra'], agartala: ['Tripura'], imphal: ['Manipur', 'hill station valley'], dibrugarh: ['Assam', 'brahmaputra'],
+  kolkata: ['West Bengal'], bhubaneswar: ['Odisha'], patna: ['Bihar', 'ganga'], ranchi: ['Jharkhand'],
+  nagpur: ['Maharashtra', 'vidarbha'], bhopal: ['Madhya Pradesh'], raipur: ['Chhattisgarh'], jabalpur: ['Madhya Pradesh'],
+  ahmedabad: ['Gujarat'], mumbai: ['Maharashtra', 'konkan'], pune: ['Maharashtra'], surat: ['Gujarat'],
+  hyderabad: ['Telangana', 'deccan'], bengaluru: ['Karnataka', 'bangalore deccan'], madurai: ['Tamil Nadu'], kurnool: ['Andhra Pradesh', 'deccan'],
+  chennai: ['Tamil Nadu', 'madras'], kochi: ['Kerala', 'cochin'], visakhapatnam: ['Andhra Pradesh', 'vizag'], 'port-blair': ['Andaman and Nicobar Islands', 'island islands'],
+};
+const S = (id, name, regionId, lat, lon, terrain = 'plains') => {
+  const [state, words = ''] = PLACE[id] || [''];
+  const tags = [...words.split(' ').filter(Boolean), ...(terrain === 'coastal' ? ['coast', 'coastal', 'sea'] : terrain === 'hills' ? ['hills', 'hilly'] : [])];
+  return { id, name, regionId, lat, lon, terrain, state, tags };
+};
 export const STATIONS = [
   S('delhi', 'Delhi', 'north-west-india', 28.61, 77.21),
   S('jaipur', 'Jaipur', 'north-west-india', 26.91, 75.79),

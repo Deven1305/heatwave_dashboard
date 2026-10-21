@@ -8,7 +8,7 @@
 //   reports       observation reports submitted through the form
 //   fetch_log     one document per refresh run (when, how many stations, success or error)
 import { MongoClient } from 'mongodb';
-import { MONGO_URI, DB_NAME, STATIONS } from './config.js';
+import { MONGO_URI, DB_NAME, STATIONS, REGIONS } from './config.js';
 
 export async function connect() {
   const client = new MongoClient(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
@@ -28,7 +28,7 @@ export async function connect() {
   await db.collection('stations').bulkWrite(STATIONS.map((s) => ({
     updateOne: {
       filter: { _id: s.id },
-      update: { $set: { name: s.name, regionId: s.regionId, lat: s.lat, lon: s.lon, terrain: s.terrain } },
+      update: { $set: { name: s.name, regionId: s.regionId, regionName: REGIONS.find((r) => r.id === s.regionId)?.name, lat: s.lat, lon: s.lon, terrain: s.terrain, state: s.state, tags: s.tags } },
       upsert: true,
     },
   })));
