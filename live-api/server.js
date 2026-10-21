@@ -7,6 +7,7 @@ import { PORT, DB_NAME, REGIONS, TIERS, REFRESH_MINUTES } from './config.js';
 import { connect } from './db.js';
 import { loadState, regionHistory, regionTrends, stationHistory, stats } from './queries.js';
 import { runCycle, startScheduler } from './collector.js';
+import { buildSearchFilter } from './search.js';
 
 let client;
 let db;
@@ -29,7 +30,7 @@ const intParam = (v, fallback, min, max) => Math.min(max, Math.max(min, Number.p
 app.get('/', (req, res) => res.json({
   service: 'climateintel-live-api', database: DB_NAME, source: 'Open-Meteo (https://open-meteo.com, CC BY 4.0)',
   refreshEveryMinutes: REFRESH_MINUTES,
-  routes: ['GET /api/health', 'GET /api/overview', 'GET /api/regions/:id/history?days=30', 'GET /api/stations/:id/history?hours=48',
+  routes: ['GET /api/health', 'GET /api/overview', 'GET /api/search?q=himalaya', 'GET /api/regions/:id/history?days=30', 'GET /api/stations/:id/history?hours=48',
     'GET /api/alerts?status=active&limit=100', 'POST /api/alerts', 'POST /api/alerts/:id/clear',
     'GET /api/reports', 'POST /api/reports', 'GET /api/reports/:id/photo', 'GET /api/stats', 'GET /api/runs', 'POST /api/refresh'],
 }));
@@ -54,6 +55,23 @@ app.get('/api/overview', wrap(async (req, res) => {
     },
     stored: s, source: { name: 'Open-Meteo', url: 'https://open-meteo.com', licence: 'CC BY 4.0' },
     normalsReady: state.stations.every((x) => x.normalC !== null), normalPeriod: state.normalPeriod,
+  });
+}));
+
+// Search cities by name, state, region, terrain or keyword ("himalaya", "coastal"...). The matching runs in MongoDB.
+app.get('/api/search', wrap(async (req, res) => {
+  const q = String(req.query.q || '').trim().slice(0, 80);
+  const filter = buildSearchFilter(q);
+  if (!filter) return res.json({ q, count: 0, stations: [], regions: [] });
+  let rows = await db.collection('stations').find(filter).project({ name: 1, regionId: 1, state: 1 }).sort({ name: 1 }).toArray();
+  // typing a region's exact name ("west india", "north-west india") means that region only
+  const norm = (v) => v.toLowerCase().replace(/[-\s]+/g, ' ').trim();
+  const exact = REGIONS.find((r) => norm(r.name) === norm(q));
+  if (exact) rows = rows.filter((r) => r.regionId === exact.id);
+  res.json({
+    q, count: rows.length,
+    stations: rows.map((r) => ({ id: r._id, name: r.name, state: r.state, regionId: r.regionId })),
+    regions: [...new Set(rows.map((r) => r.regionId))],
   });
 }));
 
