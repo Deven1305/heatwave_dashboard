@@ -171,8 +171,8 @@ Indexes make `(stationId, observedAt)` and `(stationId, date)` unique, so a read
 | Tab (`/dashboard?tab=…`) | Shows |
 |---|---|
 | `overview` | Five headline numbers, a card per region (with a 14-day sparkline), hottest cities right now, latest alerts |
-| `regions` | Pick a region: 30-day chart of the hottest city, region average and normal, a day-by-day table, and the region's cities |
-| `stations` | Table of all 30 cities; select one for its 30-day daily max/min chart and stored readings |
+| `regions` | Search box (region, city, state, keyword). Pick a region: 30-day chart of the hottest city, region average and normal, a day-by-day table, and the region's cities |
+| `stations` | Search box (for example `himalaya`, `coastal`, `Tamil Nadu`). Table of all 30 cities; select one for its 30-day daily max/min chart and stored readings |
 | `alerts` | Active alerts or the full history; form to record an alert; clear your own alerts |
 | `reports` | Observation reports stored in MongoDB (contact details are hidden) |
 | `forecast` | Expected daily maximum for the next days in every region, with the heat level it implies |
@@ -189,6 +189,7 @@ Base URL `http://localhost:4300`. All responses are JSON; errors look like `{ "e
 |---|---|
 | `GET /api/health` | Pings MongoDB |
 | `GET /api/overview` | Regions (with 14-day trend and forecast), cities, summary numbers, stored-data stats |
+| `GET /api/search?q=himalaya` | Search cities by name, state, region, terrain or keyword (runs in MongoDB); returns matching cities and their regions |
 | `GET /api/regions/:id/history?days=30` | Daily series for a region (1–90 days, includes forecast) |
 | `GET /api/stations/:id/history?hours=48` | Stored readings (up to 90 days) and all daily rows for a city |
 | `GET /api/alerts?status=active&limit=100` | Alerts, newest first |
@@ -251,7 +252,7 @@ Fixed in [live-api/config.js](live-api/config.js): the 30 cities, the 7 regions,
 ## 12. Tests
 
 ```bash
-npm test      # 9 unit tests: heat levels for plains/coastal/hills, absolute 45/47 °C rule, missing data,
+npm test      # 16 unit tests: search filter, Open-Meteo rate limits, heat levels for plains/coastal/hills, absolute 45/47 °C rule, missing data,
               # normals averaging and smoothing, 29 February handling, India-time helpers
 npm run build # compiles the React app
 ```

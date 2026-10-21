@@ -154,6 +154,7 @@ The backend is a small Node.js program. It has **two jobs** that run side by sid
 | `severity.js` | The "teacher": decides Normal / Hot Day / Heatwave / Severe Heatwave. Also builds the normal temperatures and handles India time. Pure maths, no database. |
 | `collector.js` | Runs the cycle: fetch → save → make sure normals exist → raise or clear alerts. Also the 30-minute timer. |
 | `queries.js` | Reads MongoDB and prepares ready-to-show answers (overview, region history, 14-day trends, stats). |
+| `search.js` | Turns what a user types into a safe MongoDB search filter (name, state, region, terrain, keywords). |
 | `server.js` | The web server (Express). Defines every URL the website can ask, checks input, and returns JSON. |
 | `severity.test.js`, `openmeteo.test.js` | Automatic tests (`npm test`). |
 
@@ -212,6 +213,7 @@ The website "asks questions" by visiting these addresses. Each answers with JSON
 | History of one region | `GET /api/regions/west-india/history?days=30` |
 | History of one city | `GET /api/stations/mumbai/history?hours=72` |
 | List alerts | `GET /api/alerts?status=active` |
+| Search cities and regions | `GET /api/search?q=himalaya` |
 | Add an alert | `POST /api/alerts` |
 | Clear an alert | `POST /api/alerts/:id/clear` |
 | List / add reports | `GET /api/reports`, `POST /api/reports` |
