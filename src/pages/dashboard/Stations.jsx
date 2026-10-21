@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { fmtDep, fmtTemp, formatDateTime, liveApi, timeAgo } from "../../api/live.js";
 import { DataTable, ErrorState, Loading, SeverityBadge } from "../../components/live/ui.jsx";
 import LineChart from "../../components/live/LineChart.jsx";
+import SearchBox from "../../components/live/SearchBox.jsx";
+import usePlaceSearch from "../../hooks/usePlaceSearch.js";
 import { dayMs, fmtClock } from "../../components/live/format.js";
 
 const DAILY_LINES = [
@@ -67,12 +69,20 @@ function StationDetail({ station, generatedAt }) {
   );
 }
 
-export default function Stations({ overview, params, goTo }) {
+export default function Stations({ overview, params, goTo, setParam }) {
   const [regionFilter, setRegionFilter] = useState("all");
+  const q = params.get("q") || "";
+  const { result, loading: searching, error: searchError } = usePlaceSearch(q);
   const all = overview.stations;
-  const rows = useMemo(() => all.filter((s) => regionFilter === "all" || s.regionId === regionFilter).sort((a, b) => (b.nowC ?? -99) - (a.nowC ?? -99)), [all, regionFilter]);
+  const rows = useMemo(() => {
+    if (q.trim() && !result) return []; // wait for the database to answer
+    return all
+      .filter((s) => regionFilter === "all" || s.regionId === regionFilter)
+      .filter((s) => !result || result.stations.has(s.id))
+      .sort((a, b) => (b.nowC ?? -99) - (a.nowC ?? -99));
+  }, [all, regionFilter, result, q]);
   const regionName = (id) => overview.regions.find((r) => r.id === id)?.name || id;
-  const selected = all.find((s) => s.id === params.get("station")) || rows[0];
+  const selected = rows.find((s) => s.id === params.get("station")) || rows[0];
 
   return (
     <div className="dashboard-stack">
@@ -82,6 +92,12 @@ export default function Stations({ overview, params, goTo }) {
             <h2>Cities</h2>
             <p className="panel-description">Latest stored reading per city, compared with that city's normal maximum for today. Select a row for its history.</p>
           </div>
+          <SearchBox
+            value={q}
+            onChange={(v) => setParam("q", v)}
+            placeholder="Search a city, state or keyword: himalaya, coastal, Tamil Nadu…"
+            status={searchError || (q.trim() ? (searching && !result ? "Searching…" : `${rows.length} of ${all.length} cities`) : "")}
+          />
           <label>Region
             <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
               <option value="all">All regions</option>
@@ -94,6 +110,7 @@ export default function Stations({ overview, params, goTo }) {
           selectedKey={selected?.id}
           onRowClick={(r) => goTo("stations", { station: r.id })}
           rows={rows}
+          empty={q.trim() ? (result || searchError ? `No city matches “${q.trim()}”. Try a city, state, region, or words like coastal, hills, himalaya.` : "Searching…") : "No cities."}
           columns={[
             { label: "City", key: "name" },
             { label: "Region", render: (r) => regionName(r.regionId) },
