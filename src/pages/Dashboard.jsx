@@ -27,6 +27,13 @@ export default function Dashboard() {
   const activeTab = TABS.some(([id]) => id === requested) ? requested : "overview";
   const goTo = (tab, extra = {}) => setParams(tab === "overview" && !Object.keys(extra).length ? {} : { tab, ...extra });
 
+  // keep small UI state (like the search text) in the address bar so it survives reloads and can be shared
+  const setParam = (key, value) => setParams((prev) => {
+    const next = new URLSearchParams(prev);
+    if (value) next.set(key, value); else next.delete(key);
+    return next;
+  }, { replace: true });
+
   const pullLatest = async () => {
     setFetching(true);
     setNotice({ kind: "", text: "" });
@@ -75,8 +82,8 @@ export default function Dashboard() {
         <>
           {error && <ErrorState error={`Showing the last data received. ${error}`} onRetry={() => reload()} />}
           {activeTab === "overview" && <Overview overview={overview} goTo={goTo} />}
-          {activeTab === "regions" && <Regions overview={overview} params={params} goTo={goTo} />}
-          {activeTab === "stations" && <Stations overview={overview} params={params} goTo={goTo} />}
+          {activeTab === "regions" && <Regions overview={overview} params={params} goTo={goTo} setParam={setParam} />}
+          {activeTab === "stations" && <Stations overview={overview} params={params} goTo={goTo} setParam={setParam} />}
           {activeTab === "alerts" && <Alerts overview={overview} onChanged={() => reload({ silent: true })} />}
           {activeTab === "reports" && <Reports />}
           {activeTab === "forecast" && <Forecast overview={overview} goTo={goTo} />}
