@@ -297,6 +297,7 @@ See [api/README.md](api/README.md) for the Node core API routes.
 
 ## 16. Further documentation
 
+- [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md): the whole project (frontend, backend, database) explained in plain language
 - [CODEBASE_GUIDE.md](CODEBASE_GUIDE.md), [CONCEPTS_GUIDE.md](CONCEPTS_GUIDE.md): earlier lab walkthroughs of the front end and React/forms concepts
 - [IMPLEMENTATION.md](IMPLEMENTATION.md), [EXPLANATION.md](EXPLANATION.md), [PROJECT_EXPLANATION.md](PROJECT_EXPLANATION.md): how the lab requirements were implemented
   (written before the live-data rewrite, so parts describe the old sample-data back ends)
