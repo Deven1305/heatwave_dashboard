@@ -73,7 +73,7 @@ export default function Alerts({ overview, onChanged }) {
               { label: "Source", render: (r) => (r.source === "auto" ? "Automatic" : "Recorded by a user") },
               { label: "Status", render: (r) => <span className={`lv-status lv-status-${r.status}`}>{r.status}</span> },
               { label: "Issued (IST)", render: (r) => formatDateTime(r.issuedAt) },
-              { label: "", render: (r) => (r.status === "active" && r.source === "manual" ? <button className="btn btn-ghost btn-small" onClick={() => clear(r.id)}>Clear</button> : null) },
+              { label: "Action", render: (r) => (r.status === "active" && r.source === "manual" ? <button className="btn btn-ghost btn-small" onClick={() => clear(r.id)}>Clear</button> : null) },
             ]}
           />
         )}

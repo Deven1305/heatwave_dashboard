@@ -30,10 +30,11 @@ export function Stat({ label, value, note, tone }) {
 }
 
 // columns: [{ label, key?, render?(row), align? }]
-export function DataTable({ columns, rows, empty = "No records are available.", rowKey, onRowClick, selectedKey }) {
+export function DataTable({ columns, rows, empty = "No records are available.", rowKey, onRowClick, selectedKey, ariaLabel = "Data table, scrollable" }) {
   if (!rows?.length) return <Loading label={empty} />;
   return (
-    <div className="responsive-table">
+    // tabIndex lets keyboard users scroll a wide table sideways (WCAG: scrollable regions must be focusable)
+    <div className="responsive-table" tabIndex={0} role="region" aria-label={ariaLabel}>
       <table>
         <thead><tr>{columns.map((c) => <th key={c.label} style={c.align ? { textAlign: c.align } : undefined}>{c.label}</th>)}</tr></thead>
         <tbody>
