@@ -7,7 +7,7 @@ import { PORT, DB_NAME, REGIONS, TIERS, REFRESH_MINUTES } from './config.js';
 import { connect } from './db.js';
 import { loadState, regionHistory, regionTrends, stationHistory, stats } from './queries.js';
 import { runCycle, startScheduler } from './collector.js';
-import { buildSearchFilter } from './search.js';
+import { buildSearchFilter, buildTextFilter, normalizeAlertQuery, ALERT_FIELDS, REPORT_FIELDS } from './search.js';
 
 let client;
 let db;
@@ -31,8 +31,8 @@ app.get('/', (req, res) => res.json({
   service: 'climateintel-live-api', database: DB_NAME, source: 'Open-Meteo (https://open-meteo.com, CC BY 4.0)',
   refreshEveryMinutes: REFRESH_MINUTES,
   routes: ['GET /api/health', 'GET /api/overview', 'GET /api/search?q=himalaya', 'GET /api/regions/:id/history?days=30', 'GET /api/stations/:id/history?hours=48',
-    'GET /api/alerts?status=active&limit=100', 'POST /api/alerts', 'POST /api/alerts/:id/clear',
-    'GET /api/reports', 'POST /api/reports', 'GET /api/reports/:id/photo', 'GET /api/stats', 'GET /api/runs', 'POST /api/refresh'],
+    'GET /api/alerts?status=active&q=text&limit=100', 'POST /api/alerts', 'POST /api/alerts/:id/clear',
+    'GET /api/reports?q=text', 'POST /api/reports', 'GET /api/reports/:id/photo', 'GET /api/stats', 'GET /api/runs', 'POST /api/refresh'],
 }));
 
 app.get('/api/health', wrap(async (req, res) => {
@@ -91,6 +91,8 @@ app.get('/api/stations/:id/history', wrap(async (req, res) => {
 app.get('/api/alerts', wrap(async (req, res) => {
   const filter = {};
   if (req.query.status) filter.status = String(req.query.status);
+  // optional free-text search (?q=heatwave mumbai), matched inside MongoDB
+  Object.assign(filter, buildTextFilter(normalizeAlertQuery(String(req.query.q || '').slice(0, 80)), ALERT_FIELDS));
   const rows = await db.collection('alerts').find(filter).sort({ issuedAt: -1 }).limit(intParam(req.query.limit, 100, 1, 500)).toArray();
   res.json({ count: rows.length, alerts: rows.map(({ _id, ...rest }) => ({ id: _id, ...rest })) });
 }));
@@ -123,7 +125,8 @@ app.post('/api/alerts/:id/clear', wrap(async (req, res) => {
 
 // ---- observation reports --------------------------------------------------------------------
 app.get('/api/reports', wrap(async (req, res) => {
-  const rows = await db.collection('reports').find({}).sort({ createdAt: -1 }).limit(intParam(req.query.limit, 100, 1, 500))
+  const filter = buildTextFilter(String(req.query.q || '').slice(0, 80), REPORT_FIELDS) || {};
+  const rows = await db.collection('reports').find(filter).sort({ createdAt: -1 }).limit(intParam(req.query.limit, 100, 1, 500))
     .project({ 'photo.dataUrl': 0, email: 0, phone: 0 }).toArray(); // contact details stay private
   res.json({ count: rows.length, reports: rows.map(({ _id, ...rest }) => ({ id: _id, ...rest })) });
 }));
