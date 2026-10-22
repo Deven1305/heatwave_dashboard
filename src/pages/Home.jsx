@@ -1,10 +1,15 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useLive } from "../context/LiveData.jsx";
 import { fmtTemp, formatDateTime, timeAgo } from "../api/live.js";
 import { levelColor } from "../components/live/format.js";
 import usePageTitle from "../hooks/usePageTitle.js";
 
+/**
+ * Home page: a live headline ("right now" card + one chip per region), a short explanation of how the data flows,
+ * links into the dashboard, an honest note about the data, and a search that opens the Stations tab.
+ * All numbers come from the shared LiveData context (the API), never from hard-coded values.
+ */
 const STEPS = [
   ["01", "Collect", "Every 30 minutes the live API asks Open-Meteo for the current weather, the last 30 days and the coming days of 30 Indian cities."],
   ["02", "Store", "MongoDB keeps every reading and every daily value. Reload the page or restart the server and the history is still there."],
@@ -21,7 +26,16 @@ const FEATURES = [
 export default function Home() {
   usePageTitle("Live heat monitor");
   const { overview, error, loading } = useLive();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
   const s = overview?.summary;
+
+  // "find a city": open the Stations tab with the search already typed in
+  const findPlace = (event) => {
+    event.preventDefault();
+    const text = query.trim();
+    navigate(text ? `/dashboard?tab=stations&q=${encodeURIComponent(text)}` : "/dashboard?tab=stations");
+  };
   const hottest = s?.hottestNow;
   const lastOk = overview?.stored?.lastSuccessAt;
 
@@ -35,6 +49,10 @@ export default function Home() {
             Real weather for 30 cities in 7 regions, kept in a database so you can read today against the days before it,
             with automatic heatwave alerts.
           </p>
+          <form className="lv-find" onSubmit={findPlace} role="search">
+            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find a city, state or keyword: Mumbai, himalaya, coastal…" aria-label="Find a city or region" maxLength={80} />
+            <button className="btn btn-primary" type="submit">Search</button>
+          </form>
           <div className="hero-ctas">
             <Link to="/dashboard" className="btn btn-primary">Open the dashboard ↗</Link>
             <Link to="/report" className="btn btn-ghost">Report an observation</Link>
