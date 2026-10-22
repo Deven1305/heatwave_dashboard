@@ -12,6 +12,13 @@ import Reports from "./dashboard/Reports.jsx";
 import Forecast from "./dashboard/Forecast.jsx";
 import DataTab from "./dashboard/DataTab.jsx";
 
+/**
+ * Dashboard shell: the header (live status + refresh buttons), the tab bar, and the active tab.
+ *
+ * All data comes from the shared LiveData context (/api/overview, re-read every 5 minutes). Which tab is open, which
+ * region/city is selected and the search text all live in the URL (?tab=regions&region=west-india&q=himalaya), so a
+ * reload keeps the view and a link can be shared. Tabs receive `params` (read) and `setParam` / `goTo` (write).
+ */
 export const TABS = [
   ["overview", "Overview"], ["regions", "Regions"], ["stations", "Stations"], ["alerts", "Alerts"],
   ["reports", "Reports"], ["forecast", "Forecast"], ["data", "Data"],
@@ -83,12 +90,12 @@ export default function Dashboard() {
       {!overview && loading ? <Loading label="Reading stored data…" /> : !overview ? <ErrorState error={error} onRetry={() => reload()} /> : (
         <>
           {error && <ErrorState error={`Showing the last data received. ${error}`} onRetry={() => reload()} />}
-          {activeTab === "overview" && <Overview overview={overview} goTo={goTo} />}
+          {activeTab === "overview" && <Overview overview={overview} params={params} setParam={setParam} goTo={goTo} />}
           {activeTab === "regions" && <Regions overview={overview} params={params} goTo={goTo} setParam={setParam} />}
           {activeTab === "stations" && <Stations overview={overview} params={params} goTo={goTo} setParam={setParam} />}
-          {activeTab === "alerts" && <Alerts overview={overview} onChanged={() => reload({ silent: true })} />}
-          {activeTab === "reports" && <Reports />}
-          {activeTab === "forecast" && <Forecast overview={overview} goTo={goTo} />}
+          {activeTab === "alerts" && <Alerts overview={overview} params={params} setParam={setParam} onChanged={() => reload({ silent: true })} />}
+          {activeTab === "reports" && <Reports params={params} setParam={setParam} />}
+          {activeTab === "forecast" && <Forecast overview={overview} params={params} setParam={setParam} goTo={goTo} />}
           {activeTab === "data" && <DataTab overview={overview} />}
         </>
       )}
