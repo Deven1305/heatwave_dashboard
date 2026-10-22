@@ -16,6 +16,7 @@ function Row({ data, keyPrefix }) {
 }
 
 // Scrolling strip of the latest stored reading for every city (read from the live API, not from Open-Meteo directly).
+// It is a labelled region so screen readers can find it (or skip it) as a landmark.
 export default function Ticker() {
   const { overview, error, loading } = useLive();
   const items = (overview?.stations || [])
@@ -23,7 +24,7 @@ export default function Ticker() {
     .map((s) => ({ city: s.name, temp: `${s.nowC.toFixed(1)}°C`, tier: tierKey(s.tier) }));
 
   return (
-    <div className="ticker">
+    <div className="ticker" role="region" aria-label="Latest temperatures in 30 cities">
       {items.length ? (
         <div className="ticker-track mono">
           <Row data={items} keyPrefix="a" />

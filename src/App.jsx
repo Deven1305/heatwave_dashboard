@@ -24,9 +24,11 @@ export default function App() {
   return (
     <LiveDataProvider>
     <div className="app-shell">
+      {/* keyboard users can jump past the navigation and ticker straight to the page */}
+      <a className="skip-link" href="#main">Skip to content</a>
       {!isMobileCompanion && <Navbar />}
       {!isMobileCompanion && <Ticker />}
-      <main style={{ flex: 1 }}>
+      <main id="main" tabIndex={-1} style={{ flex: 1 }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/report" element={<ReportForm />} />
