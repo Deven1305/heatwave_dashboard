@@ -276,16 +276,25 @@ The tab is kept in the address, e.g. `/dashboard?tab=regions&region=west-india`,
 |---|---|
 | `live/LineChart.jsx` | Draws the charts as SVG with no chart library. Adjusts to the container width, shows a tooltip on hover and shades the forecast. |
 | `live/Sparkline.jsx` | The tiny trend line on region cards. |
+| `live/CityBars.jsx` | The "cities of a region" picture: one row per city, a bar for today's maximum, a white line for the normal, a dashed line for the heat threshold and a dot for right now. |
+| `live/SearchBox.jsx` | The search box with a clear button and a one-line result count. |
 | `live/ui.jsx` | Shared table, stat card, loading and error boxes, severity badge. |
 | `Badge.jsx` | The coloured label (SAFE / WATCH / WARNING / EMERGENCY). |
 | `Navbar.jsx`, `Ticker.jsx`, `Footer.jsx` | The frame around every page. The ticker scrolls the latest stored reading of every city. |
 
-### 6.6 The API client: `src/api/live.js`
+### 6.6 Search
+
+Every list can be searched. The text you type is kept in the address (`?q=himalaya`) and sent to the backend after a short pause (`useDebouncedValue`).
+Cities, regions, forecast and overview use `GET /api/search`; alerts and reports pass `?q=` to their own list. The backend builds a safe MongoDB filter
+(`live-api/search.js`): every word must appear in some searchable field. City search also looks at the state and keywords such as `himalaya` and `coastal`.
+Reporter email and phone are never searched.
+
+### 6.7 The API client: `src/api/live.js`
 
 The one place that knows the backend's address (`http://localhost:4300`). It has a function per question (`liveApi.overview()`, `liveApi.createAlert()`...), turns failures into readable
 messages, and has small helpers for formatting temperatures and times ("12 min ago").
 
-### 6.7 Styling
+### 6.8 Styling
 
 `styles/global.css` holds the base look (dark navy theme, buttons, forms). `styles/live.css` holds the dashboard and home page styles; every class there starts with `lv-`.
 
