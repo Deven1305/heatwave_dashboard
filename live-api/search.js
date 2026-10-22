@@ -11,13 +11,29 @@ export function parseTerms(q) {
   return String(q ?? '').toLowerCase().split(/\s+/).filter(Boolean).slice(0, 5).map((t) => t.slice(0, 40));
 }
 
-export function buildSearchFilter(q) {
+/**
+ * Turns the text a user typed into a MongoDB filter: every word must appear (case-insensitive) in at least one
+ * of `fields`. Returns null for an empty search, so callers can simply skip filtering.
+ */
+export function buildTextFilter(q, fields) {
   const terms = parseTerms(q);
   if (!terms.length) return null;
   return {
     $and: terms.map((term) => {
       const re = new RegExp(escapeRegex(term), 'i');
-      return { $or: SEARCH_FIELDS.map((field) => ({ [field]: re })) };
+      return { $or: fields.map((field) => ({ [field]: re })) };
     }),
   };
 }
+
+// The three searches the dashboard offers. Reporter email and phone are deliberately NOT searchable.
+export const buildSearchFilter = (q) => buildTextFilter(q, SEARCH_FIELDS); // cities (Stations / Regions / Overview / Forecast)
+export const ALERT_FIELDS = ['region', 'message', 'tier', 'severity', 'status', 'source'];
+export const REPORT_FIELDS = ['region', 'plotId', 'status', 'observerName', 'notes', 'confidence'];
+
+// Alerts store source as "auto" / "manual" but the screen says "Automatic" / "Recorded by a user":
+// map the words people read to the values we store.
+export const normalizeAlertQuery = (q) => String(q ?? '')
+  .replace(/automatic/gi, 'auto')
+  .replace(/recorded by a user/gi, 'manual') // the exact label shown in the table
+  .replace(/\b(?:user|recorded)\b/gi, 'manual');
