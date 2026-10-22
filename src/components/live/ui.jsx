@@ -2,10 +2,12 @@ import React from "react";
 import Badge from "../Badge.jsx";
 import { tierKey } from "../../api/live.js";
 
+/** Placeholder box shown while data loads, or when a list is empty (the same box carries the message). */
 export function Loading({ label = "Loading data…" }) {
   return <div className="data-state" role="status">{label}</div>;
 }
 
+/** Error message with an optional "Try again" button; role=alert makes screen readers announce it. */
 export function ErrorState({ error, onRetry }) {
   return (
     <div className="data-state data-state-error" role="alert">
@@ -15,10 +17,12 @@ export function ErrorState({ error, onRetry }) {
   );
 }
 
+/** Coloured pill for a heat level (tier: Safe/Watch/Warning/Emergency; severity: the words shown on it). */
 export function SeverityBadge({ tier, severity }) {
   return <Badge tier={tierKey(tier)} label={severity || tier} />;
 }
 
+/** Headline number card: a label, a big value, and a small note. `tone="warn"` colours it amber. */
 export function Stat({ label, value, note, tone }) {
   return (
     <article className={`stat-card lv-stat ${tone ? `lv-tone-${tone}` : ""}`}>
@@ -29,7 +33,11 @@ export function Stat({ label, value, note, tone }) {
   );
 }
 
-// columns: [{ label, key?, render?(row), align? }]
+/**
+ * Generic table. columns: [{ label, key?, render?(row), align? }]; rows are plain objects.
+ * With onRowClick the rows become keyboard-usable (Tab to a row, Enter or Space to choose it).
+ * The wrapper is focusable and named so a wide table can be scrolled sideways with the keyboard.
+ */
 export function DataTable({ columns, rows, empty = "No records are available.", rowKey, onRowClick, selectedKey, ariaLabel = "Data table, scrollable" }) {
   if (!rows?.length) return <Loading label={empty} />;
   return (
