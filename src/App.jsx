@@ -14,6 +14,11 @@ import MobileHome from "./pages/MobileHome.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import { LiveDataProvider } from "./context/LiveData.jsx";
 
+/**
+ * Application frame: skip link, navigation bar, temperature ticker, the current page, footer.
+ * LiveDataProvider wraps everything so the ticker, home page, dashboard and mobile page share ONE copy of the live data.
+ * The mobile companion (/m) draws its own compact layout, so it skips the desktop navbar, ticker and footer.
+ */
 export default function App() {
   const location = useLocation();
   // Item 5 (Mobile companion) is its own compact page — it renders its own
