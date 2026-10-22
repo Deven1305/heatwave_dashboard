@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import usePageTitle from "../hooks/usePageTitle.js";
 
 /**
  * KJS-CES-01 — Exp-3 Activity 2: "Build a registration form with name,
@@ -59,6 +60,7 @@ function FieldError({ error }) {
 }
 
 export default function Register() {
+  usePageTitle("Register");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

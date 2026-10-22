@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { liveApi } from "../api/live.js";
+import usePageTitle from "../hooks/usePageTitle.js";
 
 /**
  * KJS-CES-01 — Exp-3: Form Handling & Form Validation in React
@@ -218,6 +219,7 @@ function FieldError({ error }) {
 }
 
 export default function ReportForm() {
+  usePageTitle("Report an observation");
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);

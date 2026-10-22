@@ -1,7 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import usePageTitle from "../hooks/usePageTitle.js";
 
 export default function NotFound() {
+  usePageTitle("Page not found");
   return (
     <section className="section container" style={{ textAlign: "center", padding: "100px 0" }}>
       <span className="eyebrow mono" style={{ color: "var(--red)" }}>ERR_ROUTE_NOT_FOUND</span>

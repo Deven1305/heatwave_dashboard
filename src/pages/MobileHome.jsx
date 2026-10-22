@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Badge from "../components/Badge.jsx";
 import { formatDateTime, liveApi } from "../api/live.js";
+import usePageTitle from "../hooks/usePageTitle.js";
 
 /**
  * KJS-CES-01 — ClimateIntel Mobile companion (Item 5).
@@ -72,6 +73,7 @@ function EmergencyBanner({ alert }) {
 }
 
 export default function MobileHome() {
+  usePageTitle("Alerts (mobile)");
   const [booting, setBooting] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("home");

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useLive } from "../context/LiveData.jsx";
 import { fmtTemp, formatDateTime, timeAgo } from "../api/live.js";
 import { levelColor } from "../components/live/format.js";
+import usePageTitle from "../hooks/usePageTitle.js";
 
 const STEPS = [
   ["01", "Collect", "Every 30 minutes the live API asks Open-Meteo for the current weather, the last 30 days and the coming days of 30 Indian cities."],
@@ -18,6 +19,7 @@ const FEATURES = [
 ];
 
 export default function Home() {
+  usePageTitle("Live heat monitor");
   const { overview, error, loading } = useLive();
   const s = overview?.summary;
   const hottest = s?.hottestNow;

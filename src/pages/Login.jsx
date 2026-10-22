@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import usePageTitle from "../hooks/usePageTitle.js";
 
 /**
  * KJS-CES-01 — Login gate for the Dashboard.
@@ -72,6 +73,7 @@ function FieldError({ error }) {
 }
 
 export default function Login() {
+  usePageTitle("Login");
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

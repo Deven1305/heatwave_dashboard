@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useLive } from "../context/LiveData.jsx";
 import { timeAgo } from "../api/live.js";
 import { ErrorState, Loading } from "../components/live/ui.jsx";
+import usePageTitle from "../hooks/usePageTitle.js";
 import Overview from "./dashboard/Overview.jsx";
 import Regions from "./dashboard/Regions.jsx";
 import Stations from "./dashboard/Stations.jsx";
@@ -25,6 +26,7 @@ export default function Dashboard() {
 
   const requested = ALIASES[params.get("tab")] || params.get("tab");
   const activeTab = TABS.some(([id]) => id === requested) ? requested : "overview";
+  usePageTitle(`${TABS.find(([id]) => id === activeTab)[1]} · Dashboard`);
   const goTo = (tab, extra = {}) => setParams(tab === "overview" && !Object.keys(extra).length ? {} : { tab, ...extra });
 
   // keep small UI state (like the search text) in the address bar so it survives reloads and can be shared
