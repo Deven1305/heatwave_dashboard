@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "KJS-CES-01 Climate Intelligence System \u2014 Exp-3 (Form Handling & Validation) + React Router Navigation & Dashboard",
+  "description": "Live heatwave monitoring dashboard for India: React, Express and MongoDB with real Open-Meteo weather data",
   "scripts": {
     "dev": "vite",
     "dev:all": "node scripts/dev-all.js",
