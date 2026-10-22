@@ -2,8 +2,14 @@ import React, { useEffect, useState } from "react";
 import { fmtDep, fmtTemp, formatDateTime, formatDay, liveApi } from "../../api/live.js";
 import { SeverityBadge, Stat } from "../../components/live/ui.jsx";
 import Sparkline from "../../components/live/Sparkline.jsx";
-import { levelColor } from "../../components/live/format.js";
+import SearchBox from "../../components/live/SearchBox.jsx";
+import usePlaceSearch from "../../hooks/usePlaceSearch.js";
+import { levelColor, noMatch } from "../../components/live/format.js";
 
+/**
+ * One card per region on the Overview. Choosing it opens the Regions tab, where the region's cities are listed.
+ * Shows the city under the most heat stress, its maximum against normal, and a 14-day sparkline.
+ */
 export function RegionCard({ region: r, onOpen }) {
   const hot = typeof r.departureC === "number" && r.departureC > 0;
   return (
@@ -16,16 +22,30 @@ export function RegionCard({ region: r, onOpen }) {
       <div className="lv-region-meta mono">
         <span>normal {fmtTemp(r.normalC)}</span>
         <span className={hot ? "lv-up" : "lv-down"}>{fmtDep(r.departureC)}</span>
-        <span>now ≤ {fmtTemp(r.nowMaxC)}</span>
       </div>
       <Sparkline values={(r.trend || []).map((d) => d.maxC)} color={levelColor(r.level)} label={`${r.name} daily maximum, last 14 days`} />
-      <div className="lv-region-foot">{r.stationsReporting}/{r.stationsTotal} cities reporting · last 14 days</div>
+      <div className="lv-region-foot">View its {r.stationsTotal} cities →</div>
     </button>
   );
 }
 
-export default function Overview({ overview, goTo }) {
+/**
+ * "Overview" tab: the situation today in one screen.
+ *   1. five headline numbers,
+ *   2. the 7 region cards (most stressed first),
+ *   3. the hottest cities right now and the latest alerts.
+ *
+ * Search: the box above the region cards asks MongoDB (via /api/search) which regions and cities match and
+ * filters both the cards and the "hottest cities" list, so "coastal" shows the coastal cities only.
+ *
+ * Props: overview (shared live data), params + setParam (URL query holds the search text), goTo(tab, extra).
+ */
+export default function Overview({ overview, params, setParam, goTo }) {
   const { summary, regions, stations, stored } = overview;
+  const q = params.get("q") || "";
+  const { result, loading: searching, error: searchError } = usePlaceSearch(q);
+
+  // latest 5 alerts (read from MongoDB through the API); reloaded when the shared data changes
   const [alerts, setAlerts] = useState(null);
   useEffect(() => {
     let live = true;
@@ -33,13 +53,22 @@ export default function Overview({ overview, goTo }) {
     return () => { live = false; };
   }, [overview.generatedAt]);
 
-  const ranked = [...regions].sort((a, b) => b.level - a.level || (b.departureC ?? -99) - (a.departureC ?? -99));
-  const top = stations.filter((s) => s.nowC !== null).sort((a, b) => b.nowC - a.nowC).slice(0, 8);
+  // apply the search to what is shown (no search = everything)
+  const waiting = q.trim() && !result; // typed, but the database has not answered yet
+  const shownRegions = [...regions]
+    .filter((r) => !q.trim() || (result && result.regions.has(r.id)))
+    .sort((a, b) => b.level - a.level || (b.departureC ?? -99) - (a.departureC ?? -99)); // most stressed first
+  const topCities = stations
+    .filter((s) => s.nowC !== null && (!q.trim() || (result && result.stations.has(s.id))))
+    .sort((a, b) => b.nowC - a.nowC)
+    .slice(0, 8);
+
   const hottest = summary.hottestNow;
   const counts = stored.collections;
 
   return (
     <div className="dashboard-stack">
+      {/* 1. headline numbers */}
       <div className="stat-grid lv-stat-grid">
         <Stat label="Regions elevated" value={`${summary.regionsElevated} / ${summary.regionsTotal}`} note="at Hot Day level or above today" tone={summary.regionsElevated ? "warn" : undefined} />
         <Stat label="Hottest right now" value={hottest ? fmtTemp(hottest.nowC) : "—"} note={hottest ? `${hottest.name} · ${formatDateTime(hottest.observedAt)}` : "no reading yet"} />
@@ -48,28 +77,43 @@ export default function Overview({ overview, goTo }) {
         <Stat label="Stored in MongoDB" value={counts.observations.toLocaleString("en-IN")} note={`readings · ${counts.daily.toLocaleString("en-IN")} daily rows${stored.firstObservationAt ? ` · since ${formatDay(stored.firstObservationAt.slice(0, 10))}` : ""}`} />
       </div>
 
+      {/* 2. region cards + search */}
       <section>
-        <div className="lv-section-head">
-          <h2>Regions today</h2>
-          <p>Each card shows the city under the most heat stress in that region. Select a region for its full history.</p>
+        <div className="lv-section-head lv-section-row">
+          <div>
+            <h2>Regions today</h2>
+            <p>Each card shows the city under the most heat stress in that region. Choose one to see all its cities.</p>
+          </div>
+          <SearchBox
+            value={q}
+            onChange={(v) => setParam("q", v)}
+            placeholder="Search a region, city or keyword: himalaya, coastal…"
+            status={searchError || (q.trim() ? (waiting ? "Searching…" : `${shownRegions.length} region(s), ${topCities.length > 7 ? "8+" : topCities.length} cit${topCities.length === 1 ? "y" : "ies"} shown`) : "")}
+          />
         </div>
-        <div className="lv-region-grid">
-          {ranked.map((r) => <RegionCard key={r.id} region={r} onOpen={() => goTo("regions", { region: r.id })} />)}
-        </div>
+        {shownRegions.length ? (
+          <div className="lv-region-grid">
+            {shownRegions.map((r) => <RegionCard key={r.id} region={r} onOpen={() => goTo("regions", { region: r.id })} />)}
+          </div>
+        ) : (
+          <div className="data-state">{waiting ? "Searching…" : noMatch(q, "regions or cities", "Try a region, city, state, or words like coastal, hills, himalaya.")}</div>
+        )}
       </section>
 
+      {/* 3. hottest cities + latest alerts */}
       <div className="dashboard-two-column lv-two">
         <section className="panel">
           <h2>Hottest cities right now</h2>
           <p className="panel-description">Latest stored reading per city (temperature at 2 m).</p>
           <div className="regional-bars">
-            {top.map((s) => (
+            {topCities.map((s) => (
               <button className="regional-bar-row lv-bar-btn" key={s.id} onClick={() => goTo("stations", { station: s.id })}>
                 <span>{s.name}</span>
                 <div className="regional-bar-track"><div className="regional-bar-fill" style={{ width: `${Math.max(4, Math.min(100, ((s.nowC - 10) / 40) * 100))}%`, background: levelColor(s.level) }} /></div>
                 <strong className="mono">{fmtTemp(s.nowC)}</strong>
               </button>
             ))}
+            {!topCities.length && <p className="panel-description">{waiting ? "Searching…" : "No city matches the search."}</p>}
           </div>
         </section>
 
