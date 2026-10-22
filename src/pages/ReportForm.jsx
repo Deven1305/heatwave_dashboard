@@ -409,6 +409,7 @@ export default function ReportForm() {
           <label>Observation Date <span className="required">*</span></label>
           <input
             type="date"
+            aria-label="Observation date"
             max={todayISO()}
             value={form.obsDate}
             onChange={(e) => set("obsDate", e.target.value)}
@@ -421,6 +422,7 @@ export default function ReportForm() {
           <label>Observation Time <span className="required">*</span></label>
           <input
             type="time"
+            aria-label="Observation time"
             value={form.obsTime}
             onChange={(e) => set("obsTime", e.target.value)}
           />
@@ -430,7 +432,7 @@ export default function ReportForm() {
         {/* 8. select */}
         <div className={`field ${errors.region ? "error" : ""}`}>
           <label>IMD Region <span className="required">*</span></label>
-          <select value={form.region} onChange={(e) => set("region", e.target.value)}>
+          <select aria-label="IMD region" value={form.region} onChange={(e) => set("region", e.target.value)}>
             <option value="">Select region…</option>
             {REGIONS.map((r) => (
               <option key={r} value={r}>{r}</option>
@@ -483,6 +485,7 @@ export default function ReportForm() {
           <div className="range-wrap">
             <input
               type="range"
+              aria-label="Confidence level in percent"
               min={0}
               max={100}
               step={5}
@@ -526,6 +529,7 @@ export default function ReportForm() {
           <div className="file-drop">
             <input
               type="file"
+              aria-label="Photo evidence"
               ref={photoInput}
               accept="image/jpeg,image/png,image/webp"
               onChange={(e) => set("photo", e.target.files[0] || null)}
