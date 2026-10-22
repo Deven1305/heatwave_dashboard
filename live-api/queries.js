@@ -1,6 +1,6 @@
 // Read side of the live backend: everything the dashboard shows is computed here from MongoDB.
 import { REGIONS, FRESH_MINUTES } from './config.js';
-import { classify, normalFor, istDate, LABELS, TIER_OF } from './severity.js';
+import { classify, normalFor, istDate, LABELS, TIER_OF, THRESHOLD } from './severity.js';
 
 const round1 = (n) => Math.round(n * 10) / 10;
 const mean = (values) => (values.length ? round1(values.reduce((a, b) => a + b, 0) / values.length) : null);
@@ -31,6 +31,7 @@ export async function loadState(db, now = new Date()) {
       windKmh: cur?.windKmh ?? null, observedAt: cur?.observedAt ?? null,
       fresh: ageMin !== null && ageMin <= FRESH_MINUTES,
       todayMaxC, todayMinC: day?.tMinC ?? null, normalC,
+      thresholdC: THRESHOLD[s.terrain] ?? THRESHOLD.plains, // the "too hot" limit for this terrain, drawn on the city bars
       departureC: c.departureC, level: c.level, severity: c.severity, tier: c.tier,
     };
   });
