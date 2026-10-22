@@ -57,6 +57,10 @@ rules, raises automatic alerts, and shows everything in a React dashboard, today
 |---|---|
 | ![Login](docs/screenshots/login.png) | ![Mobile](docs/screenshots/mobile.png) |
 
+| A region's cities on a phone |
+|---|
+| ![Cities on a phone](docs/screenshots/mobile-cities.png) |
+
 ## 2. What it does
 
 - Fetches current weather, the past 30 days and a 5-day forecast (today + 4) for **30 cities in 7 regions** every 30 minutes.
@@ -64,6 +68,8 @@ rules, raises automatic alerts, and shows everything in a React dashboard, today
 - Compares each city's daily maximum with **its own multi-year normal** and classifies it: Normal, Hot Day, Heatwave, Severe Heatwave.
 - Raises an **automatic alert** per region when the level changes, and marks it cleared when the region returns to normal. All alerts stay as history.
 - Dashboard with seven tabs: Overview, Regions, Stations, Alerts, Reports, Forecast, Data.
+- **Search everywhere**: Overview, Regions, Stations, Forecast, Alerts and Reports each have a search box (and the home page has "find a city"). The matching runs in MongoDB, and the text is kept in the address bar.
+- **Choose a region and see its cities** compared on one scale: today's maximum, the city's normal, its heat threshold and the current reading.
 - Lets users **record their own alerts** and **submit observation reports** (validated, stored in MongoDB).
 - Mobile companion page, a live ticker, and a clear "data" tab that shows exactly what is stored and how it is computed.
 
@@ -170,12 +176,12 @@ Indexes make `(stationId, observedAt)` and `(stationId, date)` unique, so a read
 
 | Tab (`/dashboard?tab=…`) | Shows |
 |---|---|
-| `overview` | Five headline numbers, a card per region (with a 14-day sparkline), hottest cities right now, latest alerts |
-| `regions` | Search box (region, city, state, keyword). Pick a region: 30-day chart of the hottest city, region average and normal, a day-by-day table, and the region's cities |
-| `stations` | Search box (for example `himalaya`, `coastal`, `Tamil Nadu`). Table of all 30 cities; select one for its 30-day daily max/min chart and stored readings |
-| `alerts` | Active alerts or the full history; form to record an alert; clear your own alerts |
-| `reports` | Observation reports stored in MongoDB (contact details are hidden) |
-| `forecast` | Expected daily maximum for the next days in every region, with the heat level it implies |
+| `overview` | Five headline numbers, a card per region (with a 14-day sparkline; choose one to open it), hottest cities right now, latest alerts. Searchable |
+| `regions` | Search box (region, city, state, keyword). Pick a region: its headline numbers, **its cities compared side by side**, a 30-day chart (hottest city, region average, normal) and a day-by-day table (shortened until you ask for all) |
+| `stations` | Search box (for example `himalaya`, `coastal`, `Tamil Nadu`) and region filter. A short table of all 30 cities; select one for its facts (humidity, wind, normal, threshold), 30-day chart and stored readings |
+| `alerts` | Search; active alerts or the full history; form to record an alert; clear your own alerts |
+| `reports` | Search; observation reports stored in MongoDB (contact details are hidden and not searchable) |
+| `forecast` | Search; expected daily maximum for the next days in every region, with the heat level it implies |
 | `data` | Row counts in MongoDB, first/last reading, recent refresh runs, and the method |
 
 Other routes: `/` home, `/report` observation form, `/login`, `/register`, `/editing-demo`, `/stay-on-page` (lab demos), `/m` mobile companion.
@@ -192,10 +198,10 @@ Base URL `http://localhost:4300`. All responses are JSON; errors look like `{ "e
 | `GET /api/search?q=himalaya` | Search cities by name, state, region, terrain or keyword (runs in MongoDB); returns matching cities and their regions |
 | `GET /api/regions/:id/history?days=30` | Daily series for a region (1–90 days, includes forecast) |
 | `GET /api/stations/:id/history?hours=48` | Stored readings (up to 90 days) and all daily rows for a city |
-| `GET /api/alerts?status=active&limit=100` | Alerts, newest first |
+| `GET /api/alerts?status=active&q=heatwave&limit=100` | Alerts, newest first; `q` searches region, message, level, status and source in MongoDB |
 | `POST /api/alerts` | Record an alert `{ region, tier, message, channel? }` → 201, or 400 with the reasons |
 | `POST /api/alerts/:id/clear` | Mark an alert cleared → 200 / 404 |
-| `GET /api/reports` | Observation reports (no email/phone, no image data) |
+| `GET /api/reports?q=mumbai` | Observation reports (no email/phone, no image data); `q` searches region, station code, status, observer and notes |
 | `POST /api/reports` | Save a report (validated; region must be one of the 7) → 201 / 400 |
 | `GET /api/reports/:id/photo` | The report's image, if any |
 | `GET /api/stats` | Collection counts and first/last reading |
@@ -252,13 +258,23 @@ Fixed in [live-api/config.js](live-api/config.js): the 30 cities, the 7 regions,
 ## 12. Tests
 
 ```bash
-npm test      # 16 unit tests: search filter, Open-Meteo rate limits, heat levels for plains/coastal/hills, absolute 45/47 °C rule, missing data,
+npm test      # 19 unit tests: search filter, Open-Meteo rate limits, heat levels for plains/coastal/hills, absolute 45/47 °C rule, missing data,
               # normals averaging and smoothing, 29 February handling, India-time helpers
 npm run build # compiles the React app
 ```
 
 The collector, MongoDB queries and every dashboard tab were also checked against the real Open-Meteo API and a real MongoDB:
 a fetch stores new readings, a browser reload shows the same totals, a restart keeps the history, forms save to the database.
+
+### Accessibility and usability
+
+The interface was checked with the axe-core accessibility engine on 9 pages, on desktop and phone sizes: **0 violations**
+(it found 8 kinds before the fixes below). What is in place:
+- a "Skip to content" link, one `<h1>` per page with ordered headings, a descriptive browser title on every page;
+- every form control has a name, text meets WCAG AA contrast, and colour is never the only signal (levels are also written as words);
+- everything works with the keyboard (rows and pills are buttons, wide tables can be scrolled with the keyboard, visible focus ring);
+- the layout adapts to phones with no sideways page scrolling, and animations stop for people who prefer reduced motion;
+- progressive disclosure keeps screens calm: short tables with the extra detail one click away, long tables shortened until you ask.
 
 ## 13. The lab back ends (Exp-5, 6, 7)
 
