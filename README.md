@@ -31,7 +31,7 @@ rules, raises automatic alerts, and shows everything in a React dashboard, today
 13. [The lab back ends (Exp-5, 6, 7)](#13-the-lab-back-ends-exp-5-6-7)
 14. [Security and privacy](#14-security-and-privacy)
 15. [Troubleshooting](#15-troubleshooting)
-16. [Further documentation](#16-further-documentation)
+16. [Credits](#16-credits)
 
 ---
 
@@ -251,8 +251,7 @@ Fixed in [live-api/config.js](live-api/config.js): the 30 cities, the 7 regions,
 │   └── styles/                  global.css (base) + live.css (dashboard and home)
 ├── api/  api-express/  api-mongo/   lab back ends from Exp-5/6/7 (sample data, not used by the dashboard)
 ├── scripts/dev-all.js           starts live-api + Vite together
-├── docs/screenshots/            images used in this README
-└── *.md                         design and concept notes (section 16)
+└── docs/screenshots/            images used in this README
 ```
 
 ## 12. Tests
@@ -287,7 +286,9 @@ uses them.
 | `api-express/` | 4100 | Express Router, JSON files, validation | `npm run api-express` |
 | `api-mongo/` | 4200 | Express + MongoDB CRUD scripts (database `climateintel`, separate from the live one) | `npm run mongo:create`, `mongo:read`, `mongo:update`, `mongo:delete`, `api-mongo` |
 
-See [api/README.md](api/README.md) for the Node core API routes.
+Node core API routes (port 8100): `GET /`, `/health`, `/farmers`, `/plots`, `/sensors`, `/alerts`, `/dashboard`, `/irrigation?plotId=SG-1045`,
+`/prediction?plotId=SG-1045`, `/water-stress?plotId=SG-1045`, and `GET`/`POST /reports`. Express Router API (port 4100): `/api/regions` (full CRUD) and
+`/api/alerts` (list, create, delete). MongoDB API (port 4200): `/api/regions`, `/api/hotspots`, `/api/alerts` (list, create, update, delete).
 
 ## 14. Security and privacy
 
@@ -312,13 +313,7 @@ See [api/README.md](api/README.md) for the Node core API routes.
 | `EADDRINUSE` | Another program uses port 4300 or 5173; stop it or change `LIVE_API_PORT` |
 | Want a clean database | In MongoDB drop `climateintel_live`; it is rebuilt on the next start (history restarts from the last 30 days) |
 
-## 16. Further documentation
-
-- [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md): the whole project (frontend, backend, database) explained in plain language
-- [CODEBASE_GUIDE.md](CODEBASE_GUIDE.md), [CONCEPTS_GUIDE.md](CONCEPTS_GUIDE.md): earlier lab walkthroughs of the front end and React/forms concepts
-- [IMPLEMENTATION.md](IMPLEMENTATION.md), [EXPLANATION.md](EXPLANATION.md), [PROJECT_EXPLANATION.md](PROJECT_EXPLANATION.md): how the lab requirements were implemented
-  (written before the live-data rewrite, so parts describe the old sample-data back ends)
-- [design.md](design.md): design blueprint (layout, palette, components)
-- [api/README.md](api/README.md): Node core API notes
+## 16. Credits
 
 Weather data by [Open-Meteo.com](https://open-meteo.com/), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Heat levels are modelled on the heat-wave criteria of the India Meteorological Department (IMD); this project is not affiliated with IMD.
