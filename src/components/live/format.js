@@ -8,3 +8,6 @@ export const dayMs = (date) => Date.parse(date);
 export const fmtClock = (t) => new Date(t).toLocaleString("en-IN", {
   day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata",
 });
+
+// Message shown when a search finds nothing; `what` is the plural noun being searched ("cities", "alerts"...).
+export const noMatch = (q, what, hint = "") => `No ${what} match “${q.trim()}”.${hint ? ` ${hint}` : ""}`;
