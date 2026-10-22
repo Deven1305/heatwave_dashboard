@@ -2,6 +2,13 @@ import React, { useEffect, useState } from "react";
 import { formatDateTime, liveApi } from "../../api/live.js";
 import { DataTable, Stat } from "../../components/live/ui.jsx";
 
+/**
+ * "Data" tab: transparency about the system itself.
+ *   - how many rows each MongoDB collection holds and when the first/last reading was stored,
+ *   - the diary of recent refresh runs (when, why, success or error),
+ *   - a plain description of how the numbers are made, with the limits stated.
+ * Props: overview (shared live data: stored-data stats and the normal period).
+ */
 export default function DataTab({ overview }) {
   const { stored, source } = overview;
   const [runs, setRuns] = useState(null);
