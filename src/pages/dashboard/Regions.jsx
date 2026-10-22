@@ -1,33 +1,55 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { fmtDep, fmtTemp, formatDay, liveApi, timeAgo } from "../../api/live.js";
+import { fmtDep, fmtTemp, formatDay, liveApi } from "../../api/live.js";
 import { DataTable, ErrorState, Loading, SeverityBadge, Stat } from "../../components/live/ui.jsx";
 import LineChart from "../../components/live/LineChart.jsx";
-import { dayMs } from "../../components/live/format.js";
+import CityBars from "../../components/live/CityBars.jsx";
 import SearchBox from "../../components/live/SearchBox.jsx";
 import usePlaceSearch from "../../hooks/usePlaceSearch.js";
+import { dayMs, noMatch } from "../../components/live/format.js";
 
+/**
+ * "Regions" tab: pick one of the 7 regions and see
+ *   1. its headline numbers,
+ *   2. ITS CITIES compared side by side (CityBars),
+ *   3. a 30-day chart (hottest city, region average, normal, with the stored forecast shaded),
+ *   4. a day-by-day table (shortened until you ask for all of it).
+ *
+ * Search: the box asks MongoDB (via /api/search) which regions contain a matching city, so "himalaya" offers
+ * North-West India and lists Srinagar and Shimla. The text lives in the URL (?q=) so it survives a reload.
+ *
+ * Props: overview (shared live data), params (URL query), goTo(tab, extra) to navigate, setParam(key, value) to edit the URL.
+ */
+
+// the three lines of the history chart
 const LINES = [
   { key: "maxC", label: "Hottest city", color: "#f6ad55", width: 2.4 },
   { key: "avgMaxC", label: "Region average", color: "#71b4cb", width: 1.8 },
   { key: "normalAvgC", label: "Normal", color: "#9fb3c2", dash: "5 4", width: 1.6 },
 ];
+const TABLE_PREVIEW_ROWS = 10; // the day-by-day table shows this many rows until "Show all" is pressed
 
 export default function Regions({ overview, params, goTo, setParam }) {
   const regions = overview.regions;
+
+  // ---- search: which regions / cities match the typed text (answered by MongoDB) ----
   const q = params.get("q") || "";
   const { result, loading: searching, error: searchError } = usePlaceSearch(q);
-  // with a search active, only regions that contain a matching city (or are named by it) are offered
   const visible = q.trim() ? (result ? regions.filter((r) => result.regions.has(r.id)) : []) : regions;
+  const matchingCities = result ? overview.stations.filter((s) => result.stations.has(s.id)) : [];
+
+  // ---- which region is open: the one in the URL if it is still visible, otherwise the first visible one ----
   const selectedId = visible.find((r) => r.id === params.get("region"))?.id ?? visible[0]?.id ?? null;
   const region = regions.find((r) => r.id === selectedId);
-  const matchingCities = result ? overview.stations.filter((s) => result.stations.has(s.id)) : [];
+  const cities = overview.stations.filter((s) => s.regionId === selectedId);
+
+  // ---- the region's stored history (from MongoDB) ----
   const [days, setDays] = useState(30);
+  const [showAll, setShowAll] = useState(false);
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [retry, setRetry] = useState(0);
-
   useEffect(() => {
     if (!selectedId) return undefined;
-    let live = true;
+    let live = true; // ignore the answer if the user already moved on
     setState((s) => ({ ...s, loading: true, error: "" }));
     liveApi.regionHistory(selectedId, days)
       .then((data) => live && setState({ loading: false, error: "", data }))
@@ -38,23 +60,25 @@ export default function Regions({ overview, params, goTo, setParam }) {
   const series = state.data?.days || [];
   const points = useMemo(() => series.map((d) => ({ ...d, t: dayMs(d.date) })), [series]);
   const firstForecast = series.find((d) => d.isForecast);
-  const members = overview.stations.filter((s) => s.regionId === selectedId).sort((a, b) => (b.nowC ?? -99) - (a.nowC ?? -99));
+  const tableRows = [...series].reverse(); // newest (forecast) first
+  const shownRows = showAll ? tableRows : tableRows.slice(0, TABLE_PREVIEW_ROWS);
 
   const searchBox = (
     <SearchBox
       value={q}
       onChange={(v) => setParam("q", v)}
       placeholder="Search a region, city, state or keyword: himalaya, coastal, Gujarat…"
-      status={searchError || (q.trim() ? (searching && !result ? "Searching…" : `${visible.length} region(s), ${matchingCities.length} city match(es)`) : "")}
+      status={searchError || (q.trim() ? (searching && !result ? "Searching…" : `${visible.length} region(s), ${matchingCities.length} matching cit${matchingCities.length === 1 ? "y" : "ies"}`) : "")}
     />
   );
 
+  // nothing to show (no match, or still waiting for the first answer)
   if (!region) {
     return (
       <div className="dashboard-stack">
         {searchBox}
         <div className="data-state">
-          {q.trim() ? (result || searchError ? `Nothing matches “${q.trim()}”. Try a region, city, state, or words like coastal, hills, himalaya.` : "Searching…") : "No regions."}
+          {q.trim() ? (result || searchError ? noMatch(q, "regions or cities", "Try a region, city, state, or words like coastal, hills, himalaya.") : "Searching…") : "No regions."}
         </div>
       </div>
     );
@@ -63,8 +87,10 @@ export default function Regions({ overview, params, goTo, setParam }) {
   return (
     <div className="dashboard-stack">
       {searchBox}
+
+      {/* when searching: the matching cities as shortcuts to their own page */}
       {q.trim() && matchingCities.length > 0 && (
-        <div className="lv-matches" aria-label="Matching cities">
+        <div className="lv-matches" role="group" aria-label="Matching cities">
           <span>Matching cities:</span>
           {matchingCities.map((s) => (
             <button key={s.id} className="lv-match" onClick={() => goTo("stations", { station: s.id, q })}>
@@ -73,14 +99,16 @@ export default function Regions({ overview, params, goTo, setParam }) {
           ))}
         </div>
       )}
-      <div className="lv-pills" role="tablist" aria-label="Region">
+
+      <div className="lv-pills" role="group" aria-label="Region">
         {visible.map((r) => (
-          <button key={r.id} role="tab" aria-selected={r.id === selectedId} className={`lv-pill lv-pill-${r.level} ${r.id === selectedId ? "active" : ""}`} onClick={() => goTo("regions", { region: r.id })}>
+          <button key={r.id} aria-pressed={r.id === selectedId} className={`lv-pill lv-pill-${r.level} ${r.id === selectedId ? "active" : ""}`} onClick={() => setParam("region", r.id)}>
             {r.name}
           </button>
         ))}
       </div>
 
+      {/* 1. headline numbers */}
       <div className="stat-grid lv-stat-grid">
         <Stat label="Condition today" value={<SeverityBadge tier={region.tier} severity={region.severity} />} note={`${region.stationsReporting}/${region.stationsTotal} cities reporting`} />
         <Stat label="Peak city" value={region.peakStation || "—"} note="highest heat stress today" />
@@ -88,11 +116,19 @@ export default function Regions({ overview, params, goTo, setParam }) {
         <Stat label="Departure from normal" value={fmtDep(region.departureC)} note={`peak city, ${overview.normalPeriod || "multi-year"} average`} tone={region.departureC > 3 ? "warn" : undefined} />
       </div>
 
+      {/* 2. the region's cities, compared on one scale */}
+      <section className="panel">
+        <h2>Cities in {region.name}</h2>
+        <p className="panel-description">{cities.length} cities compared on one scale. Choose a city for its own history.</p>
+        <CityBars cities={cities} onOpen={(c) => goTo("stations", { station: c.id })} />
+      </section>
+
+      {/* 3. 30-day history chart */}
       <section className="panel">
         <div className="panel-head">
           <div>
-            <h2>{region.name}: daily maximum temperature</h2>
-            <p className="panel-description">Past days are read from MongoDB, where every refresh keeps them. The shaded part is the stored forecast.</p>
+            <h2>Last {days} days</h2>
+            <p className="panel-description">Past days are read from MongoDB. The shaded part is the stored forecast.</p>
           </div>
           <label>Period
             <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
@@ -110,39 +146,28 @@ export default function Regions({ overview, params, goTo, setParam }) {
         )}
       </section>
 
+      {/* 4. day by day (shortened: long tables bury the point) */}
       <section className="panel">
         <h2>Day by day</h2>
         <p className="panel-description">Departure and classification are for the city under the most heat stress that day.</p>
         <DataTable
+          ariaLabel={`${region.name} day by day, scrollable`}
           rowKey={(r) => r.date}
-          rows={[...series].reverse()}
+          rows={shownRows}
           columns={[
             { label: "Date", render: (r) => <>{formatDay(r.date)} {r.isForecast && <span className="lv-tag">forecast</span>}</> },
             { label: "Hottest city", render: (r) => `${r.hottestStation} · ${fmtTemp(r.maxC)}` },
-            { label: "Region average", render: (r) => fmtTemp(r.avgMaxC) },
+            { label: "Average", render: (r) => fmtTemp(r.avgMaxC) },
             { label: "Normal", render: (r) => fmtTemp(r.normalAvgC) },
             { label: "Departure", render: (r) => fmtDep(r.departureC) },
-            { label: "Classification", render: (r) => <SeverityBadge tier={r.tier} severity={r.severity} /> },
+            { label: "Class", render: (r) => <SeverityBadge tier={r.tier} severity={r.severity} /> },
           ]}
         />
-      </section>
-
-      <section className="panel">
-        <h2>Cities in {region.name}</h2>
-        <p className="panel-description">Updated {timeAgo(members.find((m) => m.observedAt)?.observedAt)}. Select a city for its stored readings.</p>
-        <DataTable
-          rowKey={(r) => r.id}
-          onRowClick={(r) => goTo("stations", { station: r.id })}
-          rows={members}
-          columns={[
-            { label: "City", key: "name" },
-            { label: "Now", render: (r) => fmtTemp(r.nowC) },
-            { label: "Today's max", render: (r) => fmtTemp(r.todayMaxC) },
-            { label: "Normal", render: (r) => fmtTemp(r.normalC) },
-            { label: "Departure", render: (r) => fmtDep(r.departureC) },
-            { label: "Classification", render: (r) => <SeverityBadge tier={r.tier} severity={r.severity} /> },
-          ]}
-        />
+        {tableRows.length > TABLE_PREVIEW_ROWS && (
+          <button className="btn btn-ghost btn-small lv-more" onClick={() => setShowAll((v) => !v)}>
+            {showAll ? "Show fewer days" : `Show all ${tableRows.length} days`}
+          </button>
+        )}
       </section>
     </div>
   );
