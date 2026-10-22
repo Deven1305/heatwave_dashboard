@@ -11,6 +11,7 @@ import { buildSearchFilter, buildTextFilter, normalizeAlertQuery, ALERT_FIELDS, 
 
 let client;
 let db;
+// 1. Connect to MongoDB first: without the database there is nothing to serve, so fail early with a clear message.
 try {
   ({ client, db } = await connect());
 } catch (error) {
@@ -18,15 +19,22 @@ try {
   process.exit(1);
 }
 
+// 2. The web server. CORS is open because this is a local development setup (see README, security notes).
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '9mb' }));
 
+// ---- small helpers used by the routes below ----
+// wrap: lets an async route throw; the error is passed to the error handler at the bottom instead of crashing.
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+// findRegion: accepts a region id ("west-india") or its name ("West India"), any letter case.
 const findRegion = (value) => REGIONS.find((r) => r.id === value || r.name.toLowerCase() === String(value).toLowerCase());
+// text: a trimmed string cut to `max` characters, or "" when the value is not a string (never trust client input).
 const text = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+// intParam: a whole number from a query string, kept inside [min, max], with a default.
 const intParam = (v, fallback, min, max) => Math.min(max, Math.max(min, Number.parseInt(v, 10) || fallback));
 
+// Service description: handy when you open http://localhost:4300 in a browser.
 app.get('/', (req, res) => res.json({
   service: 'climateintel-live-api', database: DB_NAME, source: 'Open-Meteo (https://open-meteo.com, CC BY 4.0)',
   refreshEveryMinutes: REFRESH_MINUTES,
@@ -35,6 +43,7 @@ app.get('/', (req, res) => res.json({
     'GET /api/reports?q=text', 'POST /api/reports', 'GET /api/reports/:id/photo', 'GET /api/stats', 'GET /api/runs', 'POST /api/refresh'],
 }));
 
+// Health check: pings MongoDB so "ok" really means the database answers.
 app.get('/api/health', wrap(async (req, res) => {
   await db.command({ ping: 1 });
   res.json({ status: 'ok', mongo: 'connected', database: DB_NAME });
@@ -75,12 +84,14 @@ app.get('/api/search', wrap(async (req, res) => {
   });
 }));
 
+// Daily series for one region (past days from MongoDB plus the stored forecast): feeds the Regions chart and table.
 app.get('/api/regions/:id/history', wrap(async (req, res) => {
   const result = await regionHistory(db, req.params.id, intParam(req.query.days, 30, 1, 90));
   if (!result) return res.status(404).json({ error: `Region "${req.params.id}" not found.` });
   res.json(result);
 }));
 
+// Stored readings and daily rows for one city: feeds the Stations detail panel.
 app.get('/api/stations/:id/history', wrap(async (req, res) => {
   const result = await stationHistory(db, req.params.id, intParam(req.query.hours, 48, 1, 24 * 90));
   if (!result) return res.status(404).json({ error: `Station "${req.params.id}" not found.` });
@@ -88,6 +99,7 @@ app.get('/api/stations/:id/history', wrap(async (req, res) => {
 }));
 
 // ---- alerts ---------------------------------------------------------------------------------
+// List alerts, newest first. Optional: ?status=active, ?q=text (matched in MongoDB), ?limit=.
 app.get('/api/alerts', wrap(async (req, res) => {
   const filter = {};
   if (req.query.status) filter.status = String(req.query.status);
@@ -97,6 +109,7 @@ app.get('/api/alerts', wrap(async (req, res) => {
   res.json({ count: rows.length, alerts: rows.map(({ _id, ...rest }) => ({ id: _id, ...rest })) });
 }));
 
+// Record an alert by hand. Validated here (never trust the browser); answers 400 with every reason at once.
 app.post('/api/alerts', wrap(async (req, res) => {
   const body = req.body || {};
   const errors = [];
@@ -116,6 +129,7 @@ app.post('/api/alerts', wrap(async (req, res) => {
   res.status(201).json({ id: _id, ...rest });
 }));
 
+// Mark an alert as cleared. The alert stays in the history; only its status changes.
 app.post('/api/alerts/:id/clear', wrap(async (req, res) => {
   const r = await db.collection('alerts').findOneAndUpdate({ _id: req.params.id }, { $set: { status: 'cleared', clearedAt: new Date() } }, { returnDocument: 'after' });
   if (!r) return res.status(404).json({ error: `Alert "${req.params.id}" not found.` });
@@ -124,6 +138,7 @@ app.post('/api/alerts/:id/clear', wrap(async (req, res) => {
 }));
 
 // ---- observation reports --------------------------------------------------------------------
+// List observation reports. Photos and contact details are left out; ?q=text searches (not email/phone).
 app.get('/api/reports', wrap(async (req, res) => {
   const filter = buildTextFilter(String(req.query.q || '').slice(0, 80), REPORT_FIELDS) || {};
   const rows = await db.collection('reports').find(filter).sort({ createdAt: -1 }).limit(intParam(req.query.limit, 100, 1, 500))
@@ -131,6 +146,7 @@ app.get('/api/reports', wrap(async (req, res) => {
   res.json({ count: rows.length, reports: rows.map(({ _id, ...rest }) => ({ id: _id, ...rest })) });
 }));
 
+// Save an observation report from the form. Only known fields are stored (an allow-list), each cut to a safe length.
 app.post('/api/reports', wrap(async (req, res) => {
   const b = req.body || {};
   const region = findRegion(b.region);
@@ -158,6 +174,7 @@ app.post('/api/reports', wrap(async (req, res) => {
   res.status(201).json({ message: 'Report saved successfully', record: { id: _id, ...rest, photo: p ? { name: p.name, type: p.type, size: p.size } : undefined } });
 }));
 
+// Serve a report's image. It is stored as a data URL in MongoDB and decoded here so <a href> and <img> can use it.
 app.get('/api/reports/:id/photo', wrap(async (req, res) => {
   const doc = await db.collection('reports').findOne({ _id: req.params.id }, { projection: { photo: 1 } });
   const m = doc?.photo?.dataUrl?.match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
@@ -166,13 +183,16 @@ app.get('/api/reports/:id/photo', wrap(async (req, res) => {
 }));
 
 // ---- data collection ------------------------------------------------------------------------
+// Collection counts and first/last reading time: feeds the "Stored in MongoDB" numbers.
 app.get('/api/stats', wrap(async (req, res) => res.json(await stats(db))));
 
+// The refresh diary (one entry per collection run): feeds the Data tab.
 app.get('/api/runs', wrap(async (req, res) => {
   const rows = await db.collection('fetch_log').find({}).sort({ at: -1 }).limit(intParam(req.query.limit, 20, 1, 200)).toArray();
   res.json({ count: rows.length, runs: rows.map(({ _id, ...rest }) => rest) });
 }));
 
+// Collect from Open-Meteo right now. Limited to once a minute so the free API quota is not burnt by button presses.
 let lastManual = 0;
 app.post('/api/refresh', wrap(async (req, res) => {
   const wait = 60000 - (Date.now() - lastManual);
@@ -185,6 +205,7 @@ app.post('/api/refresh', wrap(async (req, res) => {
   }
 }));
 
+// 404 for unknown routes, then one central error handler: expected problems get a clear status, the rest become a 500.
 app.use((req, res) => res.status(404).json({ error: 'Route not found', requestedPath: req.originalUrl }));
 app.use((err, req, res, next) => {
   if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Request body is too large.' });
@@ -193,6 +214,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+// 3. Start collecting on a timer, open the port, and shut down cleanly (Ctrl+C closes the database connection).
 const timer = await startScheduler(db);
 const server = app.listen(PORT, () => console.log(`ClimateIntel live API on http://localhost:${PORT}  (database "${DB_NAME}", refresh every ${REFRESH_MINUTES} min)`));
 const shutdown = async () => { clearInterval(timer); server.close(); await client.close(); process.exit(0); };
