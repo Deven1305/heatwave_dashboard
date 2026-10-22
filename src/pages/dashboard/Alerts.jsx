@@ -1,23 +1,42 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { formatDateTime, liveApi } from "../../api/live.js";
 import { DataTable, ErrorState, Loading, SeverityBadge } from "../../components/live/ui.jsx";
+import SearchBox from "../../components/live/SearchBox.jsx";
+import useDebouncedValue from "../../hooks/useDebouncedValue.js";
+import { noMatch } from "../../components/live/format.js";
 
-export default function Alerts({ overview, onChanged }) {
-  const [filter, setFilter] = useState("active");
+/**
+ * "Alerts" tab.
+ *   - A list of alerts read from MongoDB: only the ACTIVE ones, or the full history (nothing is ever deleted).
+ *   - A search box. The text is sent to the API, which matches region, message, level, status and source inside
+ *     MongoDB ("mumbai", "heatwave", "cleared", "automatic", "recorded by a user"...).
+ *   - A form to record your own alert. Automatic alerts are made by the system and cannot be edited here.
+ *
+ * Props: overview (shared live data, gives the region names), params + setParam (URL query, holds the search text),
+ *        onChanged() asks the page to reload the shared data after an alert is added or cleared.
+ */
+export default function Alerts({ overview, params, setParam, onChanged }) {
+  const [filter, setFilter] = useState("active"); // "active" | "all"
+  const q = params.get("q") || "";
+  const searchText = useDebouncedValue(q.trim(), 300); // ask the database once typing pauses
   const [state, setState] = useState({ loading: true, error: "", rows: [] });
+
+  // ---- form state ----
   const regions = overview.regions;
   const [form, setForm] = useState({ region: regions[0]?.name || "", tier: "Watch", message: "", channel: "Dashboard" });
   const [status, setStatus] = useState({ kind: "", text: "" });
   const [saving, setSaving] = useState(false);
 
+  // (re)load the list whenever the filter or the search text changes
   const load = useCallback(() => {
     setState((s) => ({ ...s, loading: true, error: "" }));
-    liveApi.alerts(filter === "active" ? "active" : "", 200)
+    liveApi.alerts(filter === "active" ? "active" : "", 200, searchText)
       .then((rows) => setState({ loading: false, error: "", rows }))
       .catch((cause) => setState({ loading: false, error: cause.message, rows: [] }));
-  }, [filter]);
+  }, [filter, searchText]);
   useEffect(() => { load(); }, [load, overview.generatedAt]);
 
+  // save a new alert; the server validates it again and answers 400 with the reasons if something is wrong
   const submit = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -35,6 +54,7 @@ export default function Alerts({ overview, onChanged }) {
     }
   };
 
+  // mark one of your own alerts as cleared (it stays in the history)
   const clear = async (id) => {
     try {
       await liveApi.clearAlert(id);
@@ -45,6 +65,10 @@ export default function Alerts({ overview, onChanged }) {
     }
   };
 
+  const emptyText = searchText
+    ? noMatch(searchText, "alerts", "Try a region, a level such as Warning, or a word from the message.")
+    : filter === "active" ? "No active alerts. Every region is currently below Hot Day level." : "No alerts have been stored yet.";
+
   return (
     <div className="dashboard-stack">
       <section className="panel">
@@ -52,20 +76,27 @@ export default function Alerts({ overview, onChanged }) {
           <div>
             <h2>Alerts</h2>
             <p className="panel-description">
-              Raised automatically when a region reaches Hot Day level or above, and cleared when it drops back to normal.
-              Every alert stays in MongoDB as history.
+              Raised automatically when a region reaches Hot Day level or above, and cleared when it drops back. Every alert stays as history.
             </p>
           </div>
+          <SearchBox
+            value={q}
+            onChange={(v) => setParam("q", v)}
+            placeholder="Search alerts: region, level, message, status…"
+            status={q.trim() && !state.loading ? `${state.rows.length} alert(s) found` : ""}
+          />
           <div className="lv-seg" role="group" aria-label="Alert filter">
-            <button className={filter === "active" ? "active" : ""} onClick={() => setFilter("active")}>Active</button>
-            <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All history</button>
+            <button aria-pressed={filter === "active"} className={filter === "active" ? "active" : ""} onClick={() => setFilter("active")}>Active</button>
+            <button aria-pressed={filter === "all"} className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All history</button>
           </div>
         </div>
+
         {state.loading && !state.rows.length ? <Loading /> : state.error ? <ErrorState error={state.error} onRetry={load} /> : (
           <DataTable
+            ariaLabel="Alerts, scrollable"
             rowKey={(r) => r.id}
             rows={state.rows}
-            empty={filter === "active" ? "No active alerts. Every region is currently below Hot Day level." : "No alerts have been stored yet."}
+            empty={emptyText}
             columns={[
               { label: "Level", render: (r) => <SeverityBadge tier={r.tier} severity={r.severity || r.tier} /> },
               { label: "Region", key: "region" },
@@ -73,6 +104,7 @@ export default function Alerts({ overview, onChanged }) {
               { label: "Source", render: (r) => (r.source === "auto" ? "Automatic" : "Recorded by a user") },
               { label: "Status", render: (r) => <span className={`lv-status lv-status-${r.status}`}>{r.status}</span> },
               { label: "Issued (IST)", render: (r) => formatDateTime(r.issuedAt) },
+              // only your own alerts can be cleared by hand; automatic ones follow the data
               { label: "Action", render: (r) => (r.status === "active" && r.source === "manual" ? <button className="btn btn-ghost btn-small" onClick={() => clear(r.id)}>Clear</button> : null) },
             ]}
           />
@@ -104,7 +136,7 @@ export default function Alerts({ overview, onChanged }) {
         </div>
         <div className="action-row">
           <button className="btn btn-primary" disabled={saving}>{saving ? "Saving…" : "Save alert"}</button>
-          {status.text && <span className={`form-status ${status.kind === "bad" ? "status-bad" : "status-ok"}`}>{status.text}</span>}
+          {status.text && <span className={`form-status ${status.kind === "bad" ? "status-bad" : "status-ok"}`} role="status">{status.text}</span>}
         </div>
       </form>
     </div>
