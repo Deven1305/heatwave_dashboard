@@ -25,10 +25,11 @@ export const liveApi = {
   overview: () => request("/api/overview"),
   regionHistory: (id, days = 30) => request(`/api/regions/${encodeURIComponent(id)}/history?days=${days}`),
   stationHistory: (id, hours = 48) => request(`/api/stations/${encodeURIComponent(id)}/history?hours=${hours}`),
-  alerts: (status = "", limit = 100) => request(`/api/alerts?limit=${limit}${status ? `&status=${status}` : ""}`).then((p) => p.alerts),
+  // q is optional free text; MongoDB does the matching on the server
+  alerts: (status = "", limit = 100, q = "") => request(`/api/alerts?limit=${limit}${status ? `&status=${status}` : ""}${q ? `&q=${encodeURIComponent(q)}` : ""}`).then((p) => p.alerts),
   createAlert: (alert) => post("/api/alerts", alert),
   clearAlert: (id) => post(`/api/alerts/${encodeURIComponent(id)}/clear`),
-  reports: () => request("/api/reports").then((p) => p.reports),
+  reports: (q = "") => request(`/api/reports${q ? `?q=${encodeURIComponent(q)}` : ""}`).then((p) => p.reports),
   createReport: (record) => post("/api/reports", record),
   photoUrl: (id) => `${BASE}/api/reports/${encodeURIComponent(id)}/photo`,
   search: (q) => request(`/api/search?q=${encodeURIComponent(q)}`),
