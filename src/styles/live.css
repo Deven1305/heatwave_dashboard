@@ -164,3 +164,12 @@
 .lv-match:hover { border-color: #71b4cb; }
 .lv-match small { color: var(--lv-muted); margin-left: 4px; }
 .lv-search-field input::-webkit-search-cancel-button, .lv-search-field input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+
+/* ---- accessibility helpers ---- */
+/* footer headings are <h2> for a correct outline but keep the small label look */
+.footer-grid .footer-title { font-family: var(--font-body); font-weight: 600; font-size: 13px; margin: 0 0 10px; color: var(--mist); }
+/* "Skip to content" appears only while it has keyboard focus */
+.skip-link { position: absolute; left: 12px; top: -48px; z-index: 100; padding: 10px 16px; border-radius: 8px; background: var(--orange); color: var(--navy); font-weight: 600; text-decoration: none; }
+.skip-link:focus { top: 12px; }
+main:focus { outline: none; }
+.responsive-table:focus-visible { outline: 2px solid #a7d9db; outline-offset: 2px; }
