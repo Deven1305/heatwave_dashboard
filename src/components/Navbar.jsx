@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
+// The top bar: logo, one link per dashboard tab (the active tab is highlighted from the URL), and the "new observation" button.
 const dashLinks = [
   { label: "Overview", tab: "overview" },
   { label: "Regions", tab: "regions" },

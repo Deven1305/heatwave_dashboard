@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+// Page footer: navigation, the data source with its required attribution (Open-Meteo, CC BY 4.0) and a plain note about data limits.
 export default function Footer() {
   return <footer className="footer"><div className="container">
     <div className="footer-grid">
