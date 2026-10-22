@@ -580,7 +580,7 @@ button {
 
 .hint {
   font-size: 12px;
-  color: rgba(11, 19, 43, 0.5);
+  color: rgba(11, 19, 43, 0.72); /* 0.5 failed WCAG AA contrast on the light card */
 }
 
 .radio-group,

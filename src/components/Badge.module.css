@@ -18,17 +18,17 @@
 
 .safe {
   background: rgba(69, 123, 157, 0.18);
-  color: var(--steel);
+  color: #9ccde3; /* lighter than --steel so the text passes WCAG AA on the dark card */
 }
 .watch {
   background: rgba(244, 163, 0, 0.18);
-  color: var(--amber);
+  color: #f3cf6a;
 }
 .warning {
   background: rgba(247, 127, 0, 0.18);
-  color: var(--orange);
+  color: #f8b865;
 }
 .emergency {
   background: rgba(214, 40, 40, 0.18);
-  color: var(--red);
+  color: #ff9b9b;
 }
