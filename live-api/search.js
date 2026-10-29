@@ -4,7 +4,7 @@
 // A city matches a word when the word appears in its name, state, region name, terrain or keywords
 // (keywords include things people say, like "himalaya", "coastal", "hill station").
 // Several words must ALL match (some field each), so "coastal tamil" finds Chennai.
-export const SEARCH_FIELDS = ['name', 'state', 'regionName', 'terrain', 'tags'];
+const SEARCH_FIELDS = ['name', 'state', 'regionName', 'terrain', 'tags'];
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // typed text is data, never a pattern
 
 export function parseTerms(q) {
