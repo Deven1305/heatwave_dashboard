@@ -1,6 +1,9 @@
-// Starts the whole project with one command:  npm run dev:all
-//   live-api (port 4300)  real Open-Meteo weather, stored in MongoDB (needs MongoDB on 127.0.0.1:27017)
-//   vite     (port 5173)  the React app
+// `npm run dev:all` runs this. It starts the two things the project needs and prints their messages in one terminal,
+// each line labelled so you can tell them apart:
+//   live-api  the backend on port 4300 (needs MongoDB running on 127.0.0.1:27017)
+//   vite      the website on port 5173
+// Ctrl+C stops both. If the backend dies (MongoDB missing, port taken) the website is stopped too, because it
+// would be useless without it.
 import { spawn } from 'node:child_process';
 
 const jobs = [
@@ -14,6 +17,7 @@ const children = jobs.map(([label, cmd, args]) => {
   child.stderr.on('data', tag);
   child.on('exit', (code) => {
     console.log(`[${label}] exited (${code})`);
+    // a non-zero exit of the backend means it crashed: take everything down and report the same exit code
     if (label.startsWith('live') && code) { children.forEach((c) => c.kill()); process.exit(code); }
   });
   return child;
