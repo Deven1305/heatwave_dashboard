@@ -11,8 +11,6 @@
     "preview": "vite preview",
     "live": "node live-api/server.js",
     "test": "node --test live-api/",
-    "api": "node api/server.js",
-    "dev:api": "node api/server.js",
     "api-express": "node api-express/server.js",
     "mongo:create": "node api-mongo/create_db.js",
     "mongo:read": "node api-mongo/read.js",
