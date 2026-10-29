@@ -74,7 +74,7 @@ npm install          # first time only
 npm run dev:all      # backend on port 4300, website on port 5173
 ```
 
-Open **http://localhost:5173**. The full steps, MongoDB setup, settings and troubleshooting are in [INSTRUCTIONS.md](INSTRUCTIONS.md).
+Open **http://localhost:5173**.
 
 ## 4. How the data flows
 
@@ -113,7 +113,7 @@ Indexes make `(stationId, observedAt)` and `(stationId, date)` unique, so a read
   Time zone is India Standard Time. 30 cities, 4 to 6 per region, one model point each.
 - **Normal.** For each city and calendar day, the average daily maximum over **2019–2024**, smoothed over ±7 days
   (a 6-year average, not IMD's official 30-year normal). Computed once on first start and stored. The period is kept short because of
-  Open-Meteo's free limits (see [INSTRUCTIONS.md](INSTRUCTIONS.md)).
+  Open-Meteo's free request limits.
 - **Classification** (modelled on the IMD heat-wave criteria):
 
   | Level | Rule |
@@ -197,7 +197,6 @@ kjs-ces-01-forms-nav/
 ├── scripts/dev-all.js           starts live-api + Vite together
 ├── docs/                        screenshots and the system-design diagram used by this README
 ├── index.html, vite.config.js, package.json, .env.example
-├── INSTRUCTIONS.md              how to run, set up, configure and fix things
 └── README.md
 ```
 
