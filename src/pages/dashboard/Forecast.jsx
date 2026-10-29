@@ -5,16 +5,14 @@ import SearchBox from "../../components/live/SearchBox.jsx";
 import usePlaceSearch from "../../hooks/usePlaceSearch.js";
 import { levelColor, noMatch } from "../../components/live/format.js";
 
-/**
- * "Forecast" tab: the expected daily maximum for the next days in every region.
- *
- * There is no forecasting code in this project. Open-Meteo's weather models make the forecast; the backend stores it
- * in MongoDB (collection "daily", isForecast = true) at every refresh, and applies the SAME heat rules to it
- * to say what level the expected temperature would mean. Each value is the hottest city of the region.
- *
- * Search filters the rows through MongoDB (/api/search), so "himalaya" shows North-West India.
- * Props: overview (shared live data), params + setParam (URL query holds the search text), goTo(tab, extra).
- */
+// The Forecast tab: the expected daily maximum for the next days, one row per region.
+//
+// There is no forecasting in this project. Open-Meteo's weather models make the forecast; the backend saves it
+// (collection "daily", isForecast = true) on every refresh and runs the SAME heat rules on it, to show what
+// level that temperature would mean. Each number is the hottest city of the region.
+//
+// Search filters the rows through MongoDB, so "himalaya" shows North-West India.
+// Props: overview (shared data), params + setParam (the address bar holds the search text), goTo(tab, extra).
 export default function Forecast({ overview, params, setParam, goTo }) {
   const days = overview.regions[0]?.forecast || []; // the same future dates for every region
   const q = params.get("q") || "";
