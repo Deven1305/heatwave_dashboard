@@ -6,16 +6,14 @@ import SearchBox from "../../components/live/SearchBox.jsx";
 import usePlaceSearch from "../../hooks/usePlaceSearch.js";
 import { dayMs, fmtClock, noMatch } from "../../components/live/format.js";
 
-/**
- * "Stations" tab: one row per city (a "station" here is a monitoring point, not a physical weather station).
- *
- *   top    : a short table of all cities (search box + region filter). The table only carries what is needed to
- *            compare cities at a glance; humidity, wind and the normal live in the detail panel (progressive disclosure).
- *   bottom : the selected city's facts, its 30-day daily max/min chart and its stored readings, all read from MongoDB.
- *
- * Search asks MongoDB (via /api/search) so keywords such as "himalaya" or "coastal" work, not just names.
- * Props: overview (shared live data), params (URL query), goTo(tab, extra), setParam(key, value).
- */
+// The Stations tab, one row per city. (A "station" here is just a point we ask Open-Meteo about, not a real weather station.)
+//
+//   top    a short table of all cities, with a search box and a region filter. It only holds what you need to compare
+//          cities at a glance. Humidity, wind and the normal are in the panel below instead, so the table stays easy to read.
+//   bottom the chosen city's details: its facts, a chart of its daily highs and lows, and the readings we stored.
+//
+// Search goes to MongoDB, so keywords like "himalaya" or "coastal" work, not only city names.
+// Props: overview (shared data), params (the address bar), goTo(tab, extra), setParam(key, value).
 
 const DAILY_LINES = [
   { key: "tMaxC", label: "Daily max", color: "#f6ad55", width: 2.4 },
@@ -31,7 +29,7 @@ const Fact = ({ label, value }) => (
   <div className="lv-fact"><dt>{label}</dt><dd className="mono">{value}</dd></div>
 );
 
-/** Detail panel for one city: facts, daily chart, stored readings. */
+// The panel under the table: everything we know about one city.
 function StationDetail({ station, generatedAt }) {
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [retry, setRetry] = useState(0);
