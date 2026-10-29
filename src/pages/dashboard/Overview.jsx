@@ -6,10 +6,8 @@ import SearchBox from "../../components/live/SearchBox.jsx";
 import usePlaceSearch from "../../hooks/usePlaceSearch.js";
 import { levelColor, noMatch } from "../../components/live/format.js";
 
-/**
- * One card per region on the Overview. Choosing it opens the Regions tab, where the region's cities are listed.
- * Shows the city under the most heat stress, its maximum against normal, and a 14-day sparkline.
- */
+// One card per region on the Overview. It shows the city under the most heat stress, its maximum next to its
+// normal, and a 14-day sparkline. Choosing the card opens the Regions tab, where all the region's cities are listed.
 export function RegionCard({ region: r, onOpen }) {
   const hot = typeof r.departureC === "number" && r.departureC > 0;
   return (
@@ -29,17 +27,14 @@ export function RegionCard({ region: r, onOpen }) {
   );
 }
 
-/**
- * "Overview" tab: the situation today in one screen.
- *   1. five headline numbers,
- *   2. the 7 region cards (most stressed first),
- *   3. the hottest cities right now and the latest alerts.
- *
- * Search: the box above the region cards asks MongoDB (via /api/search) which regions and cities match and
- * filters both the cards and the "hottest cities" list, so "coastal" shows the coastal cities only.
- *
- * Props: overview (shared live data), params + setParam (URL query holds the search text), goTo(tab, extra).
- */
+// The Overview tab: today's situation on one screen.
+//   1. five headline numbers,
+//   2. the 7 region cards, most stressed first (with the search box above them),
+//   3. the hottest cities right now and the latest alerts.
+//
+// Search here filters the region cards AND the "hottest cities" list. The matching is done by MongoDB through
+// /api/search, so words like "coastal" work, not only names.
+// Props: overview (the shared data), params + setParam (the address bar, which holds the search text), goTo (change tab).
 export default function Overview({ overview, params, setParam, goTo }) {
   const { summary, regions, stations, stored } = overview;
   const q = params.get("q") || "";
