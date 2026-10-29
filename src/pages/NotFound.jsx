@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import usePageTitle from "../hooks/usePageTitle.js";
 
+// Shown for any address that isn't a page of the site (the catch-all route in App.jsx).
 export default function NotFound() {
   usePageTitle("Page not found");
   return (
