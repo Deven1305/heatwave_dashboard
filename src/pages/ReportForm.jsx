@@ -3,17 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { liveApi } from "../api/live.js";
 import usePageTitle from "../hooks/usePageTitle.js";
 
-/**
- * Field observation form: someone on the ground reports the temperature they measured or saw.
- * The report is saved in MongoDB (POST /api/reports) and listed on the dashboard's Reports tab.
- *
- * How it works:
- *  - controlled components: every field's value lives in React state (`form`) and is shown from it;
- *  - validation runs on submit and on blur; each problem has a short error code (ERR_REQUIRED, ERR_INVALID_PHONE...);
- *  - the server validates everything again, so a request that skips the page is still rejected;
- *  - a report is a record only: it does not change readings, heat levels or alerts.
- */
+// The observation form (/report): somebody on the ground tells us the temperature they measured or saw.
+// On submit it is saved in MongoDB (POST /api/reports) and then listed on the dashboard's Reports tab.
+//
+// How the form works, in short:
+//   - Every field is a "controlled" input: its value lives in the `form` state below and the input just shows it.
+//   - validate() checks everything when you press Submit. Each problem gets a short code (ERR_REQUIRED,
+//     ERR_INVALID_PHONE ...) and a sentence, shown under the field.
+//   - The backend checks it all again. The checks here are for convenience, they don't protect anything,
+//     because anyone can skip this page and call the API directly.
+//   - A report is only a record. It doesn't change any reading, heat level or alert.
 
+// The 7 regions to choose from. The spelling has to match live-api/config.js exactly, because the backend looks the region up by name.
 const REGIONS = [
   "North-West India",
   "North-East India",
@@ -24,6 +25,7 @@ const REGIONS = [
   "South Coastal (incl. Islands)",
 ];
 
+// What the observer thinks the heat level is (their own judgement, not our calculation)
 const SEVERITY_TIERS = [
   { value: "safe", label: "Safe" },
   { value: "watch", label: "Watch" },
@@ -31,6 +33,7 @@ const SEVERITY_TIERS = [
   { value: "emergency", label: "Emergency" },
 ];
 
+// Where the observer got their reading from; they have to tick at least one
 const DATA_SOURCES = [
   { value: "aws", label: "AWS Sensor" },
   { value: "satellite", label: "Satellite (INSAT-3D)" },
@@ -38,6 +41,7 @@ const DATA_SOURCES = [
   { value: "manual", label: "Manual Field Reading" },
 ];
 
+// A short code for each kind of mistake, shown next to the message so a problem can be named in a bug report
 const ERROR_CODES = {
   REQUIRED: "ERR_REQUIRED",
   MIN_LENGTH: "ERR_MIN_LENGTH",
@@ -53,34 +57,34 @@ const ERROR_CODES = {
   FILE_SIZE: "ERR_FILE_SIZE",
 };
 
-// Letters (incl. accented), spaces, hyphens and apostrophes only — blocks
-// digits and symbols (e.g. "Ravi123", "R@vi", "Ravi_Sharma") from being a
-// "valid" name even though they are non-empty.
+// A name may have letters (accented ones too), and single spaces, hyphens or apostrophes between the letters.
+// That rejects things like "Ravi123" or "R@vi" even though they aren't empty.
 const NAME_RE = /^[A-Za-zÀ-ɏ]+(?:[ '-][A-Za-zÀ-ɏ]+)*$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[6-9]\d{9}$/; // Indian 10-digit mobile
+const PHONE_RE = /^[6-9]\d{9}$/; // Indian mobile numbers: 10 digits, starting with 6, 7, 8 or 9
 const URL_RE = /^(https?:\/\/)[^\s/$.?#].[^\s]*$/i;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_FILE_MB = 5;
+const MAX_FILE_MB = 5; // the form is stricter than the server, which allows up to 7 MB
 
-// Forgiving temperature input: accepts "42", "42.5", "42 C", "42 degrees",
-// "42°" (and similar) by only requiring a leading number; everything after
-// it is ignored rather than rejected.
+// People type temperatures in all sorts of ways: "42", "42.5", "42 C", "42 degrees", "42°". Rather than reject
+// those, we only insist the text STARTS with a number and ignore whatever follows it.
 const TEMP_LEADING_NUMBER_RE = /^\s*(-?\d+(?:\.\d+)?)/;
 function parseForgivingTemp(raw) {
   const m = TEMP_LEADING_NUMBER_RE.exec(String(raw ?? ""));
   return m ? Number(m[1]) : NaN;
 }
+// When the field loses focus it is tidied to "42.0 °C" (if it isn't a number, it is left as typed so the error can say so)
 function normalizeTempDisplay(raw) {
   const n = parseForgivingTemp(raw);
   return Number.isFinite(n) ? `${n.toFixed(1)} °C` : raw;
 }
 
-// Structured station ID: AWS Station ID split into an independently
-// validated 2-letter state code and 3-digit station number.
+// The station ID is typed as two boxes, a 2-letter state code and a 3-digit number (MH + 014), each checked on its own.
+// They are joined as "MH-014" when the report is sent.
 const STATE_CODE_RE = /^[A-Za-z]{2}$/;
 const STATION_NUMBER_RE = /^\d{3}$/;
 
+// What an empty form looks like. "Reset" puts the state back to this.
 const initialForm = {
   observerName: "",
   email: "",
@@ -100,11 +104,14 @@ const initialForm = {
   agree: false,
 };
 
+// Today as "YYYY-MM-DD" in the visitor's own timezone. (toISOString would give the UTC date, which is
+// yesterday for a few hours after midnight in India.) Used to stop people choosing a date in the future.
 function todayISO() {
   const date = new Date();
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
 }
 
+// Turns the chosen image file into text (a "data URL") that can travel inside the JSON body. Resolves to undefined when no file was chosen.
 function readPhoto(file) {
   if (!file) return Promise.resolve(undefined);
   return new Promise((resolve, reject) => {
@@ -115,6 +122,8 @@ function readPhoto(file) {
   });
 }
 
+// Checks the whole form and returns an object with one entry per wrong field: { fieldName: { code, message } }.
+// An empty object means the form is fine. Fields are checked in the order they appear on the page.
 function validate(form) {
   const errors = {};
 
@@ -209,6 +218,7 @@ function validate(form) {
   return errors;
 }
 
+// The red line under a field: [CODE] message. Draws nothing when the field has no error.
 function FieldError({ error }) {
   if (!error) return null;
   return (
@@ -229,8 +239,10 @@ export default function ReportForm() {
   const navigate = useNavigate();
   const photoInput = useRef(null);
 
+  // set("phone", "98...") updates one field and keeps the others
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
+  // ticking a data source adds it to the list, ticking it again removes it
   const toggleDataSource = (value) => {
     setForm((f) => {
       const has = f.dataSources.includes(value);
@@ -241,6 +253,8 @@ export default function ReportForm() {
     });
   };
 
+  // Submit: validate first; only a valid form is sent to the backend. If the backend refuses it (or is down),
+  // the reason is shown at the top of the form and what the person typed is kept.
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate(form);
@@ -251,14 +265,14 @@ export default function ReportForm() {
       try {
         const photo = await readPhoto(form.photo);
         const record = await liveApi.createReport({
-          plotId: `${form.stationState}-${form.stationNumber}`,
+          plotId: `${form.stationState}-${form.stationNumber}`, // "MH" + "014" -> "MH-014"
           region: form.region,
           status: `Reported ${form.severity} heat observation`,
           observerName: form.observerName.trim(),
           email: form.email.trim(),
           phone: form.phone,
           ambientTempC: parseForgivingTemp(form.ambientTemp),
-          observedAt: `${form.obsDate}T${form.obsTime}`,
+          observedAt: `${form.obsDate}T${form.obsTime}`, // date and time boxes joined: "2026-10-29T12:30"
           dataSources: form.dataSources,
           confidence: form.confidence,
           notes: form.notes.trim(),
@@ -279,6 +293,7 @@ export default function ReportForm() {
     }
   };
 
+  // "Reset": empty everything. The file input is not controlled by React, so it has to be cleared by hand.
   const handleReset = () => {
     if (photoInput.current) photoInput.current.value = "";
     setForm(initialForm);
@@ -326,7 +341,8 @@ export default function ReportForm() {
           </div>
         )}
 
-        {/* 1. text */}
+        {/* the fields, in order. Each one is a label, an input, and its FieldError */}
+        {/* observer name */}
         <div className={`field ${errors.observerName ? "error" : ""}`}>
           <label>Observer / Reporter Name <span className="required">*</span></label>
           <input
@@ -339,7 +355,7 @@ export default function ReportForm() {
           <FieldError error={errors.observerName} />
         </div>
 
-        {/* 2. email */}
+        {/* email (stored privately, never shown on the Reports tab) */}
         <div className={`field ${errors.email ? "error" : ""}`}>
           <label>Contact Email <span className="required">*</span></label>
           <input
@@ -351,7 +367,7 @@ export default function ReportForm() {
           <FieldError error={errors.email} />
         </div>
 
-        {/* 3. tel */}
+        {/* phone (also private) */}
         <div className={`field ${errors.phone ? "error" : ""}`}>
           <label>Phone Number <span className="required">*</span></label>
           <input
@@ -363,7 +379,7 @@ export default function ReportForm() {
           <FieldError error={errors.phone} />
         </div>
 
-        {/* 4. structured pair: 2-letter state code + 3-digit station number */}
+        {/* station ID: 2-letter state code + 3-digit number */}
         <div className={`field ${errors.stationState || errors.stationNumber ? "error" : ""}`}>
           <label>AWS Station ID <span className="required">*</span></label>
           <div style={{ display: "flex", gap: 8 }}>
@@ -392,7 +408,7 @@ export default function ReportForm() {
           <FieldError error={errors.stationNumber} />
         </div>
 
-        {/* 5. text that accepts "42", "42.5", "42 C", "42 degrees" */}
+        {/* temperature, typed freely (see parseForgivingTemp) */}
         <div className={`field ${errors.ambientTemp ? "error" : ""}`}>
           <label>Ambient Temperature (°C) <span className="required">*</span></label>
           <input
@@ -406,7 +422,7 @@ export default function ReportForm() {
           <FieldError error={errors.ambientTemp} />
         </div>
 
-        {/* 6. date */}
+        {/* date (not in the future) */}
         <div className={`field ${errors.obsDate ? "error" : ""}`}>
           <label>Observation Date <span className="required">*</span></label>
           <input
@@ -419,7 +435,7 @@ export default function ReportForm() {
           <FieldError error={errors.obsDate} />
         </div>
 
-        {/* 7. time */}
+        {/* time */}
         <div className={`field ${errors.obsTime ? "error" : ""}`}>
           <label>Observation Time <span className="required">*</span></label>
           <input
@@ -431,7 +447,7 @@ export default function ReportForm() {
           <FieldError error={errors.obsTime} />
         </div>
 
-        {/* 8. select */}
+        {/* region */}
         <div className={`field ${errors.region ? "error" : ""}`}>
           <label>IMD Region <span className="required">*</span></label>
           <select aria-label="IMD region" value={form.region} onChange={(e) => set("region", e.target.value)}>
@@ -443,7 +459,7 @@ export default function ReportForm() {
           <FieldError error={errors.region} />
         </div>
 
-        {/* 9. radio group */}
+        {/* the observer's own idea of the heat level (pick one) */}
         <div className={`field full ${errors.severity ? "error" : ""}`}>
           <label>Observed Heat Severity Tier <span className="required">*</span></label>
           <div className="radio-group">
@@ -463,7 +479,7 @@ export default function ReportForm() {
           <FieldError error={errors.severity} />
         </div>
 
-        {/* 10. checkbox group (multi) */}
+        {/* where the reading came from (pick at least one) */}
         <div className={`field full ${errors.dataSources ? "error" : ""}`}>
           <label>Data Source(s) Used <span className="required">*</span></label>
           <div className="checkbox-group">
@@ -481,7 +497,7 @@ export default function ReportForm() {
           <FieldError error={errors.dataSources} />
         </div>
 
-        {/* 11. range */}
+        {/* how sure the observer is, 0 to 100 */}
         <div className="field full">
           <label>Confidence Level</label>
           <div className="range-wrap">
@@ -499,7 +515,7 @@ export default function ReportForm() {
           <span className="hint">How confident are you in this reading?</span>
         </div>
 
-        {/* 12. textarea */}
+        {/* free notes, up to 500 characters */}
         <div className={`field full ${errors.notes ? "error" : ""}`}>
           <label>
             Additional Observations
@@ -513,7 +529,7 @@ export default function ReportForm() {
           <FieldError error={errors.notes} />
         </div>
 
-        {/* 13. url */}
+        {/* a link to a source, optional */}
         <div className={`field ${errors.referenceUrl ? "error" : ""}`}>
           <label>Reference Data Source Link (optional)</label>
           <input
@@ -525,7 +541,7 @@ export default function ReportForm() {
           <FieldError error={errors.referenceUrl} />
         </div>
 
-        {/* 14. file */}
+        {/* a photo as evidence, optional */}
         <div className={`field ${errors.photo ? "error" : ""}`}>
           <label>Photo Evidence (optional)</label>
           <div className="file-drop">
@@ -541,7 +557,7 @@ export default function ReportForm() {
           <FieldError error={errors.photo} />
         </div>
 
-        {/* 15. checkbox single */}
+        {/* confirmation that the details are correct; required */}
         <div className={`field full ${errors.agree ? "error" : ""}`}>
           <label className="checkbox-option" style={{ width: "fit-content" }}>
             <input
