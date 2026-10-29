@@ -4,14 +4,14 @@ import { liveApi } from "../api/live.js";
 import usePageTitle from "../hooks/usePageTitle.js";
 
 /**
- * KJS-CES-01 — Exp-3: Form Handling & Form Validation in React
- * Use case: Field Heat Observation & AWS Station Report submission.
+ * Field observation form: someone on the ground reports the temperature they measured or saw.
+ * The report is saved in MongoDB (POST /api/reports) and listed on the dashboard's Reports tab.
  *
- * Demonstrates (per Exp-3 lab activity):
- *  - Controlled components (all fields driven by state)
- *  - 13 distinct HTML input types
- *  - Manual client-side validation with structured error codes
- *  - onSubmit + event.preventDefault()
+ * How it works:
+ *  - controlled components: every field's value lives in React state (`form`) and is shown from it;
+ *  - validation runs on submit and on blur; each problem has a short error code (ERR_REQUIRED, ERR_INVALID_PHONE...);
+ *  - the server validates everything again, so a request that skips the page is still rejected;
+ *  - a report is a record only: it does not change readings, heat levels or alerts.
  */
 
 const REGIONS = [
@@ -63,7 +63,7 @@ const URL_RE = /^(https?:\/\/)[^\s/$.?#].[^\s]*$/i;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_FILE_MB = 5;
 
-// Item 3a — Forgiving Format: accepts "42", "42.5", "42 C", "42 degrees",
+// Forgiving temperature input: accepts "42", "42.5", "42 C", "42 degrees",
 // "42°" (and similar) by only requiring a leading number; everything after
 // it is ignored rather than rejected.
 const TEMP_LEADING_NUMBER_RE = /^\s*(-?\d+(?:\.\d+)?)/;
@@ -76,7 +76,7 @@ function normalizeTempDisplay(raw) {
   return Number.isFinite(n) ? `${n.toFixed(1)} °C` : raw;
 }
 
-// Item 3b — Structured Format: AWS Station ID split into an independently
+// Structured station ID: AWS Station ID split into an independently
 // validated 2-letter state code and 3-digit station number.
 const STATE_CODE_RE = /^[A-Za-z]{2}$/;
 const STATION_NUMBER_RE = /^\d{3}$/;
@@ -293,12 +293,12 @@ export default function ReportForm() {
   return (
     <section className="form-page container">
       <div className="form-header">
-        <span className="eyebrow mono">EXP-3 · FORM HANDLING &amp; VALIDATION</span>
+        <span className="eyebrow mono">FIELD OBSERVATION</span>
         <h1 style={{ fontSize: 32, marginBottom: 6 }}>Field Heat Observation Report</h1>
         <p style={{ color: "rgba(241,250,238,0.65)", maxWidth: "62ch" }}>
-          Submit a localized AWS / field heat reading for the KJS-CES-01 Regional Heatwave
-          Early-Warning system. All 15 fields below are controlled React components validated
-          on submit, each failure returning a structured error code.
+          Report the temperature you measured or saw at your location. Reports are saved in MongoDB and
+          listed on the dashboard's Reports tab. They are a record for analysts and do not change the
+          readings or alerts. Fields marked * are required.
         </p>
       </div>
 
@@ -363,7 +363,7 @@ export default function ReportForm() {
           <FieldError error={errors.phone} />
         </div>
 
-        {/* 4. structured pair (Item 3b): 2-letter state + 3-digit station number */}
+        {/* 4. structured pair: 2-letter state code + 3-digit station number */}
         <div className={`field ${errors.stationState || errors.stationNumber ? "error" : ""}`}>
           <label>AWS Station ID <span className="required">*</span></label>
           <div style={{ display: "flex", gap: 8 }}>
@@ -392,7 +392,7 @@ export default function ReportForm() {
           <FieldError error={errors.stationNumber} />
         </div>
 
-        {/* 5. text, forgiving format (Item 3a) */}
+        {/* 5. text that accepts "42", "42.5", "42 C", "42 degrees" */}
         <div className={`field ${errors.ambientTemp ? "error" : ""}`}>
           <label>Ambient Temperature (°C) <span className="required">*</span></label>
           <input
