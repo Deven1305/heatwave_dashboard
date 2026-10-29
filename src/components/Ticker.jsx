@@ -15,6 +15,9 @@ function Row({ data, keyPrefix }) {
   );
 }
 
+const SECONDS_PER_CITY = 7.5; // lower = faster scroll, higher = slower
+
+// The row gets longer with every city, so the loop time grows with it (7.5 s per city is about 70 px/s, readable).
 // Scrolling strip of the latest stored reading for every city (read from the live API, not from Open-Meteo directly).
 // It is a labelled region so screen readers can find it (or skip it) as a landmark.
 export default function Ticker() {
@@ -26,7 +29,7 @@ export default function Ticker() {
   return (
     <div className="ticker" role="region" aria-label="Latest temperatures in 30 cities">
       {items.length ? (
-        <div className="ticker-track mono">
+        <div className="ticker-track mono" style={{ animationDuration: `${Math.max(30, Math.round(items.length * SECONDS_PER_CITY))}s` }}>
           <Row data={items} keyPrefix="a" />
           <Row data={items} keyPrefix="b" />
         </div>
