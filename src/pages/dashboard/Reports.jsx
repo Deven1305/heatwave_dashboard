@@ -6,16 +6,12 @@ import SearchBox from "../../components/live/SearchBox.jsx";
 import useDebouncedValue from "../../hooks/useDebouncedValue.js";
 import { noMatch } from "../../components/live/format.js";
 
-/**
- * "Reports" tab: observation reports that people submitted through the form at /report.
- * They are stored in MongoDB (collection "reports") and listed newest first.
- *
- * A report is a RECORD of what someone saw; it does not change any reading, heat level or alert.
- * Search is done by the API inside MongoDB over region, station code, status, observer name and notes.
- * Email and phone are stored but never returned or searched, to keep them private.
- *
- * Props: params + setParam (URL query, holds the search text).
- */
+// The Reports tab: what people submitted through the form on /report, newest first, straight from MongoDB.
+//
+// A report is just a record of what somebody saw. It does not change any reading, heat level or alert.
+// Search is done by the backend inside MongoDB (region, station code, status, observer name, notes).
+// Email and phone are saved but never sent to this page and can't be searched, to keep them private.
+// Props: params + setParam (the address bar holds the search text).
 export default function Reports({ params, setParam }) {
   const q = params.get("q") || "";
   const searchText = useDebouncedValue(q.trim(), 300); // ask the database once typing pauses
