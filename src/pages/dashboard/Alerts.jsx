@@ -5,16 +5,13 @@ import SearchBox from "../../components/live/SearchBox.jsx";
 import useDebouncedValue from "../../hooks/useDebouncedValue.js";
 import { noMatch } from "../../components/live/format.js";
 
-/**
- * "Alerts" tab.
- *   - A list of alerts read from MongoDB: only the ACTIVE ones, or the full history (nothing is ever deleted).
- *   - A search box. The text is sent to the API, which matches region, message, level, status and source inside
- *     MongoDB ("mumbai", "heatwave", "cleared", "automatic", "recorded by a user"...).
- *   - A form to record your own alert. Automatic alerts are made by the system and cannot be edited here.
- *
- * Props: overview (shared live data, gives the region names), params + setParam (URL query, holds the search text),
- *        onChanged() asks the page to reload the shared data after an alert is added or cleared.
- */
+// The Alerts tab.
+//   - The list of alerts from MongoDB: just the active ones, or the whole history (alerts are never deleted).
+//   - A search box. The text goes to the backend, which looks in the region, message, level, status and source
+//     ("mumbai", "heatwave", "cleared", "automatic"...).
+//   - A form to record your own alert. The automatic ones are made by the system and can't be edited or cleared here.
+// Props: overview (gives the region names for the form), params + setParam (the address bar holds the search text),
+// onChanged() tells the page to re-read the shared data after an alert is added or cleared.
 export default function Alerts({ overview, params, setParam, onChanged }) {
   const [filter, setFilter] = useState("active"); // "active" | "all"
   const q = params.get("q") || "";
