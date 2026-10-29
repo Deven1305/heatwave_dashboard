@@ -10,7 +10,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const log = (...args) => console.log(`[collector ${new Date().toISOString()}]`, ...args);
 
 // 1) Fetch current weather + daily history/forecast for every station and store it.
-export async function refreshAll(db, trigger = 'scheduled') {
+async function refreshAll(db, trigger = 'scheduled') {
   const started = Date.now();
   const stations = await db.collection('stations').find({}, { projection: { normalMax: 0 } }).toArray();
   const entry = { at: new Date(), trigger, ok: false, stations: stations.length };
@@ -64,7 +64,7 @@ export async function refreshAll(db, trigger = 'scheduled') {
 }
 
 // 2) Normals: average daily maximum per calendar day over NORMAL_YEARS (computed once, then stored).
-export async function ensureNormals(db) {
+async function ensureNormals(db) {
   const missing = await db.collection('stations').find({ normalMax: { $exists: false } }, { projection: { name: 1, lat: 1, lon: 1 } }).toArray();
   if (!missing.length) return 0;
   log(`computing normals for ${missing.length} stations from ${NORMAL_YEARS[0]}-${NORMAL_YEARS[1]} daily maxima...`);
@@ -94,7 +94,7 @@ export async function ensureNormals(db) {
 }
 
 // 3) Alerts: one active automatic alert per region; a new one is written whenever the level changes.
-export async function evaluateAlerts(db) {
+async function evaluateAlerts(db) {
   const { regions, stations } = await loadState(db);
   if (stations.some((s) => s.normalC === null)) return { skipped: 'normals not ready' };
   const alerts = db.collection('alerts');
