@@ -1,7 +1,6 @@
 // Starts the whole project with one command:  npm run dev:all
 //   live-api (port 4300)  real Open-Meteo weather, stored in MongoDB (needs MongoDB on 127.0.0.1:27017)
 //   vite     (port 5173)  the React app
-// The older lab back ends (api/, api-express/, api-mongo/) have their own scripts, see the README.
 import { spawn } from 'node:child_process';
 
 const jobs = [

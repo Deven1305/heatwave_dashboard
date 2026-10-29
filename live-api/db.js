@@ -1,4 +1,4 @@
-// MongoDB connection for the live backend: database "climateintel_live" (separate from the Exp-7 lab database).
+// MongoDB connection for the live backend: database "climateintel_live" (its own database, created automatically on first start).
 //
 // Collections
 //   stations      one document per monitoring city (+ its latest reading and 365 "normal" daily maxima)
