@@ -1,4 +1,5 @@
-// Rate-limit handling of the Open-Meteo client, with fetch replaced by a stub (no network needed).
+// Tests how the Open-Meteo client behaves when Open-Meteo says "slow down" or "bad request".
+// fetch is swapped for a fake that returns the answers we want, so no internet is used and nothing waits a real minute.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fetchDailyMaxHistory, setRateLimitWait } from './openmeteo.js';

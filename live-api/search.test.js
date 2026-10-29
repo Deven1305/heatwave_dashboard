@@ -1,3 +1,5 @@
+// Tests for the search filter. The important ones: typed characters must never act as a pattern, and
+// reporters' email and phone must never be searchable.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildSearchFilter, buildTextFilter, normalizeAlertQuery, parseTerms, REPORT_FIELDS } from './search.js';

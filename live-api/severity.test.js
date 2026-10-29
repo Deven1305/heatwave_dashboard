@@ -1,4 +1,5 @@
-// Run with: npm test   (Node's built-in test runner, no extra packages)
+// Tests for the heat rules in severity.js. Run them with `npm test` (Node's own test runner, nothing to install).
+// If you change a threshold or a rule on purpose, the matching test here should fail first: update it to the new rule.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { classify, dayIndex, buildNormals, istDate, parseIst, normalFor } from './severity.js';
