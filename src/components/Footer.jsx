@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-// Page footer: navigation, the data source with its required attribution (Open-Meteo, CC BY 4.0) and a plain note about data limits.
+// The footer shown on every page except the mobile one. It carries the credit for Open-Meteo, which its CC BY 4.0
+// licence requires, and a plain-words note about what the data is and isn't. Don't remove either.
+// The headings are <h2> (not <h5>) so the page's heading order stays correct for screen readers; the CSS keeps them small.
 export default function Footer() {
   return <footer className="footer"><div className="container">
     <div className="footer-grid">

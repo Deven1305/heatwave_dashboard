@@ -1,7 +1,8 @@
 import React from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
-// The top bar: logo, one link per dashboard tab (the active tab is highlighted from the URL), and the "new observation" button.
+// The bar at the top: logo, one link for each dashboard tab, and the "+ New observation" button.
+// The links are the same tabs as on the dashboard page, so keep the two lists in step if a tab is added.
 const dashLinks = [
   { label: "Overview", tab: "overview" },
   { label: "Regions", tab: "regions" },
@@ -14,6 +15,7 @@ const dashLinks = [
 
 export default function Navbar() {
   const location = useLocation();
+  // which tab is open is read from the address (?tab=regions); no tab in the address means the overview
   const activeTab = new URLSearchParams(location.search).get("tab") || "overview";
 
   return (
