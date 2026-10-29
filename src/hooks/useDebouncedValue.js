@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-// Returns `value`, but only after it has stopped changing for `delay` ms.
-// Used for search boxes so the database is asked once the user pauses typing, not on every keystroke.
+// Returns `value`, but only once it has stayed the same for `delay` milliseconds.
+// The Alerts and Reports search boxes use it, so the database is asked when the person pauses, not on every letter.
 export default function useDebouncedValue(value, delay = 300) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {

@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { liveApi } from "../api/live.js";
 
-// Asks the live API (which searches MongoDB) which cities and regions match `text`.
-// Returns result = null when nothing is being searched, otherwise { stations: Set(ids), regions: Set(ids), count }.
-// Typing is debounced so the database is asked once the user pauses.
+// Gives a page the answer to "which cities and regions match what the user typed?".
+// The matching is done by the backend in MongoDB; we only get ids back and the page filters the data it already has.
+//
+// What you get: { loading, error, result }. result is null when the box is empty (so "show everything"), otherwise
+// { stations: Set of ids, regions: Set of ids, count }. A Set is used so the page can ask .has(id) quickly for every row.
 export default function usePlaceSearch(text) {
   const term = text.trim();
   const [state, setState] = useState({ loading: false, error: "", result: null });
 
   useEffect(() => {
     if (!term) { setState({ loading: false, error: "", result: null }); return undefined; }
-    let live = true;
+    let live = true; // turns false when the user types again, so an old answer can't overwrite a newer one
     setState((s) => ({ ...s, loading: true, error: "" }));
+    // wait 250 ms after the last keystroke before asking, so typing "himalaya" is one request, not eight
     const timer = setTimeout(() => {
       liveApi.search(term)
         .then((r) => live && setState({
