@@ -7,18 +7,15 @@ import SearchBox from "../../components/live/SearchBox.jsx";
 import usePlaceSearch from "../../hooks/usePlaceSearch.js";
 import { dayMs, noMatch } from "../../components/live/format.js";
 
-/**
- * "Regions" tab: pick one of the 7 regions and see
- *   1. its headline numbers,
- *   2. ITS CITIES compared side by side (CityBars),
- *   3. a 30-day chart (hottest city, region average, normal, with the stored forecast shaded),
- *   4. a day-by-day table (shortened until you ask for all of it).
- *
- * Search: the box asks MongoDB (via /api/search) which regions contain a matching city, so "himalaya" offers
- * North-West India and lists Srinagar and Shimla. The text lives in the URL (?q=) so it survives a reload.
- *
- * Props: overview (shared live data), params (URL query), goTo(tab, extra) to navigate, setParam(key, value) to edit the URL.
- */
+// The Regions tab. Pick one of the 7 regions and you get:
+//   1. its headline numbers,
+//   2. its cities side by side (CityBars): this is what you see after clicking a region card on the Overview,
+//   3. a chart of the last days (hottest city, region average, normal) with the stored forecast shaded,
+//   4. a day-by-day table, cut short until you press "Show all".
+//
+// Search: the box asks MongoDB which regions contain a matching city, so "himalaya" offers North-West India and
+// lists Srinagar and Shimla as shortcuts. The text lives in the address (?q=) so it survives a reload.
+// Props: overview (shared data), params (the address bar), goTo(tab, extra) to change tab, setParam(key, value) to edit the address.
 
 // the three lines of the history chart
 const LINES = [
