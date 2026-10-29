@@ -28,10 +28,9 @@ rules, raises automatic alerts, and shows everything in a React dashboard, today
 10. [Configuration](#10-configuration)
 11. [Folder structure](#11-folder-structure)
 12. [Tests](#12-tests)
-13. [The lab back ends (Exp-5, 6, 7)](#13-the-lab-back-ends-exp-5-6-7)
-14. [Security and privacy](#14-security-and-privacy)
-15. [Troubleshooting](#15-troubleshooting)
-16. [Credits](#16-credits)
+13. [Security and privacy](#13-security-and-privacy)
+14. [Troubleshooting](#14-troubleshooting)
+15. [Credits](#15-credits)
 
 ---
 
@@ -53,13 +52,9 @@ rules, raises automatic alerts, and shows everything in a React dashboard, today
 |---|---|
 | ![Data](docs/screenshots/data.png) | ![Report form](docs/screenshots/report-form.png) |
 
-| Login | Mobile companion (`/m`) |
+| Mobile companion (`/m`) | A region's cities on a phone |
 |---|---|
-| ![Login](docs/screenshots/login.png) | ![Mobile](docs/screenshots/mobile.png) |
-
-| A region's cities on a phone |
-|---|
-| ![Cities on a phone](docs/screenshots/mobile-cities.png) |
+| ![Mobile](docs/screenshots/mobile.png) | ![Cities on a phone](docs/screenshots/mobile-cities.png) |
 
 ## 2. What it does
 
@@ -77,9 +72,10 @@ rules, raises automatic alerts, and shows everything in a React dashboard, today
 
 Requirements: **Node.js 18+** (developed on Node 20), **MongoDB** running locally (see section 4), an internet connection.
 
-Open a terminal in this folder and run:
+Open a terminal and go into the project folder, then run:
 
 ```bash
+cd kjs-ces-01-forms-nav        # the folder that contains package.json (use its full path if you are elsewhere)
 npm install          # first time only
 npm run dev:all      # starts the live API (port 4300) and the React app (port 5173)
 ```
@@ -122,6 +118,8 @@ The live API needs a MongoDB server. Nothing else has to be configured: the data
 If MongoDB is not running, the API stops with a clear message instead of failing silently.
 
 ## 5. How the data flows
+
+![System design: users, React frontend, Express backend, MongoDB and Open-Meteo](docs/system-design.png)
 
 ```
 Open-Meteo (public API) ──every 30 min──► live API (Node + Express, port 4300) ──► MongoDB "climateintel_live"
@@ -184,7 +182,7 @@ Indexes make `(stationId, observedAt)` and `(stationId, date)` unique, so a read
 | `forecast` | Search; expected daily maximum for the next days in every region, with the heat level it implies |
 | `data` | Row counts in MongoDB, first/last reading, recent refresh runs, and the method |
 
-Other routes: `/` home, `/report` observation form, `/login`, `/register`, `/editing-demo`, `/stay-on-page` (lab demos), `/m` mobile companion.
+Other routes: `/` home, `/report` observation form, `/m` mobile companion; any other address shows a 404 page.
 Deep links work, for example `/dashboard?tab=regions&region=west-india` or `/dashboard?tab=stations&station=mumbai`.
 
 ## 9. REST API reference
@@ -233,25 +231,30 @@ Fixed in [live-api/config.js](live-api/config.js): the 30 cities, the 7 regions,
 ## 11. Folder structure
 
 ```
-├── live-api/                    Live backend (Node + Express + MongoDB)
-│   ├── server.js                REST API, validation, error handling
-│   ├── collector.js             fetch → store → normals → alerts, and the scheduler
+kjs-ces-01-forms-nav/
+├── live-api/                    Backend (Node + Express + MongoDB)
+│   ├── server.js                15 REST routes, validation, error handling
+│   ├── collector.js             timer; fetch → store → normals → alerts
 │   ├── openmeteo.js             Open-Meteo client (timeouts, retries, rate-limit wait)
 │   ├── queries.js               overview, history, trends, stats
-│   ├── severity.js              classification, normals, IST helpers (pure functions)
-│   ├── severity.test.js         unit tests (npm test)
-│   ├── db.js, config.js         connection and indexes / settings, cities, regions
-├── src/                         React app
+│   ├── search.js                safe MongoDB filter built from typed text
+│   ├── severity.js              heat rules, normals, India-time helpers (pure functions)
+│   ├── db.js, config.js         connection and indexes / settings, 7 regions, 30 cities
+│   └── *.test.js                19 unit tests (npm test)
+├── src/                         Frontend (React + Vite)
+│   ├── main.jsx, App.jsx        entry and page frame
 │   ├── api/live.js              the only API client (talks to live-api)
 │   ├── context/LiveData.jsx     shared overview data, re-read every 5 minutes
-│   ├── pages/                   Home, Dashboard, ReportForm, Login, Register, MobileHome, demos
+│   ├── hooks/                   usePlaceSearch, useDebouncedValue, usePageTitle
+│   ├── pages/                   Home, Dashboard, ReportForm, MobileHome, NotFound
 │   │   └── dashboard/           Overview, Regions, Stations, Alerts, Reports, Forecast, DataTab
-│   ├── components/              Navbar, Ticker, Footer, Badge, InPageEdit
-│   │   └── live/                LineChart, Sparkline, shared table/stat components
+│   ├── components/              Navbar, Ticker, Footer, Badge
+│   │   └── live/                LineChart, CityBars, Sparkline, SearchBox, shared table/stat components
 │   └── styles/                  global.css (base) + live.css (dashboard and home)
-├── api/  api-express/  api-mongo/   lab back ends from Exp-5/6/7 (sample data, not used by the dashboard)
 ├── scripts/dev-all.js           starts live-api + Vite together
-└── docs/screenshots/            images used in this README
+├── docs/                        screenshots and the system-design diagram used by this README
+├── index.html, vite.config.js, package.json, .env.example
+└── README.md
 ```
 
 ## 12. Tests
@@ -275,32 +278,17 @@ The interface was checked with the axe-core accessibility engine on 9 pages, on 
 - the layout adapts to phones with no sideways page scrolling, and animations stop for people who prefer reduced motion;
 - progressive disclosure keeps screens calm: short tables with the extra detail one click away, long tables shortened until you ask.
 
-## 13. The lab back ends (Exp-5, 6, 7)
-
-These were written for the lab experiments and are **kept for reference**. They use deliberately small **sample data** and the dashboard no longer
-uses them.
-
-| Folder | Port | Technique | Run |
-|---|---|---|---|
-| `api/` | 8100 | Node core `http`, `url`, `fs/promises`; irrigation sample data | `npm run api` |
-| `api-express/` | 4100 | Express Router, JSON files, validation | `npm run api-express` |
-| `api-mongo/` | 4200 | Express + MongoDB CRUD scripts (database `climateintel`, separate from the live one) | `npm run mongo:create`, `mongo:read`, `mongo:update`, `mongo:delete`, `api-mongo` |
-
-Node core API routes (port 8100): `GET /`, `/health`, `/farmers`, `/plots`, `/sensors`, `/alerts`, `/dashboard`, `/irrigation?plotId=SG-1045`,
-`/prediction?plotId=SG-1045`, `/water-stress?plotId=SG-1045`, and `GET`/`POST /reports`. Express Router API (port 4100): `/api/regions` (full CRUD) and
-`/api/alerts` (list, create, delete). MongoDB API (port 4200): `/api/regions`, `/api/hotspots`, `/api/alerts` (list, create, update, delete).
-
-## 14. Security and privacy
+## 13. Security and privacy
 
 - No API keys, passwords or tokens exist in the code; Open-Meteo needs none. `.env` files are git-ignored.
 - Reporter **email and phone are stored but never returned** by the reports list; the form data is validated on the server too.
 - Uploaded images are limited to JPEG/PNG/WebP up to 7 MB.
 - **Local development setup:** CORS is open and MongoDB runs without a password. Before any public deployment, restrict origins,
   enable MongoDB authentication, and add authentication to the write endpoints (alerts, reports, refresh).
-- The Login and Register pages are validation demos; there is no real authentication.
+- There is no login: anyone who can reach the API can record an alert or a report. Add authentication before any public use.
 - Please keep the Open-Meteo attribution (it is shown on the dashboard and in the footer) and respect their free-tier limits.
 
-## 15. Troubleshooting
+## 14. Troubleshooting
 
 | Problem | Fix |
 |---|---|
@@ -313,7 +301,7 @@ Node core API routes (port 8100): `GET /`, `/health`, `/farmers`, `/plots`, `/se
 | `EADDRINUSE` | Another program uses port 4300 or 5173; stop it or change `LIVE_API_PORT` |
 | Want a clean database | In MongoDB drop `climateintel_live`; it is rebuilt on the next start (history restarts from the last 30 days) |
 
-## 16. Credits
+## 15. Credits
 
 Weather data by [Open-Meteo.com](https://open-meteo.com/), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 Heat levels are modelled on the heat-wave criteria of the India Meteorological Department (IMD); this project is not affiliated with IMD.
