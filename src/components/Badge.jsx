@@ -6,9 +6,8 @@ import styles from "./Badge.module.css";
  * Styled entirely through Badge.module.css (a CSS Module), not the shared
  * global.css sheet — `styles.badge` / `styles[tier]` resolve to unique,
  * auto-generated class names, so this component's CSS is scoped to just
- * this file. Used across every Dashboard tab (Live Map, Alerts, Forecast,
- * Reports) — one component, four call sites, per-tier styling via a single
- * `tier` prop.
+ * this file. Used across the dashboard, home page and mobile page: one component,
+ * per-tier styling via the `tier` prop, and an optional `label` for the words shown.
  */
 export default function Badge({ tier, label }) {
   const tierClass = styles[tier] || "";

@@ -5,13 +5,10 @@ import { formatDateTime, liveApi } from "../api/live.js";
 import usePageTitle from "../hooks/usePageTitle.js";
 
 /**
- * KJS-CES-01 — ClimateIntel Mobile companion (Item 5).
+ * Mobile companion (/m): a phone-sized list of the stored alerts with a bottom tab bar.
  *
- * A responsive mobile view reusing the existing web stack (no separate
- * native app), rendered outside the desktop Navbar/Ticker/Footer shell
- * (see App.jsx) so it reads as its own compact page, per the task.
- * Reuses existing data (Dashboard.jsx's `alerts`) and the existing Badge
- * component rather than duplicating either.
+ * It is the same React app (no separate native app) drawn outside the desktop Navbar/Ticker/Footer
+ * shell (see App.jsx). Alerts come from the live API (read from MongoDB) and use the shared Badge.
  */
 
 const TABS = [
@@ -81,7 +78,7 @@ export default function MobileHome() {
   const [alertError, setAlertError] = useState("");
   const [loadingAlerts, setLoadingAlerts] = useState(true);
 
-  // Item 5g: interstitial screen shown once at launch, before Home renders.
+  // short start screen shown once at launch, before the alert list renders
   useEffect(() => {
     const t = setTimeout(() => setBooting(false), 1200);
     return () => clearTimeout(t);
