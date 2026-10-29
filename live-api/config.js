@@ -1,21 +1,23 @@
-// Live data backend - settings and the fixed list of regions and monitoring points.
-// Nothing in here is measurement data: it only says WHERE to ask Open-Meteo for weather.
+// Settings, plus the fixed list of regions and cities. Nothing in this file is weather data: it only says
+// WHERE to ask Open-Meteo for weather. Adding a city to the project means adding one line to STATIONS below.
+// Most numbers can be overridden with environment variables (see .env.example); the right-hand side is the default.
 
 export const PORT = Number(process.env.LIVE_API_PORT) || 4300;
 export const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017';
 export const DB_NAME = process.env.LIVE_DB_NAME || 'climateintel_live';
 export const REFRESH_MINUTES = Number(process.env.REFRESH_MINUTES) || 30;
-export const HISTORY_DAYS = 30;        // days of past daily data fetched on every refresh
-export const FORECAST_DAYS = 5;        // days of forecast stored with it
-// Period used to compute each city's "normal" daily maximum. Open-Meteo's free tier allows 5,000 weighted calls per hour and
-// one year of daily data for one city costs about 26, so 6 years x 30 cities (about 4,700) fits in one hour. Longer periods still
-// work (NORMAL_START_YEAR=2015), they just take two hours to complete on a cold start.
+export const HISTORY_DAYS = 30;        // how many past days of daily values we ask for on every refresh
+export const FORECAST_DAYS = 5;        // how many days we ask for from today on (today + 4), stored as forecast
+// Which years are averaged to get each city's "normal". Why only six? Open-Meteo's free plan allows about 5,000
+// "weighted calls" an hour and a year of daily data for one city costs about 26 of them, so 6 years x 30 cities is
+// roughly 4,700: it just fits in one hour. A longer period (NORMAL_START_YEAR=2015) works too, but the first start
+// then needs a couple of hours to finish because we have to wait for the quota to refill.
 export const NORMAL_YEARS = [Number(process.env.NORMAL_START_YEAR) || 2019, 2024];
-export const FRESH_MINUTES = 180;      // a station counts as "reporting" if its latest reading is newer than this
+export const FRESH_MINUTES = 180;      // a city counts as "reporting" if its latest reading is newer than this (minutes)
 
-export const TIERS = ['Safe', 'Watch', 'Warning', 'Emergency'];
+export const TIERS = ['Safe', 'Watch', 'Warning', 'Emergency']; // alert levels, mildest first (the position is the level number)
 
-// Same 7 names as the observation form, so a report always matches a region.
+// The 7 regions. The names are spelled exactly like the choices in the observation form, so a report can be matched to a region.
 export const REGIONS = [
   { id: 'north-west-india', name: 'North-West India' },
   { id: 'north-east-india', name: 'North-East India' },
@@ -26,8 +28,8 @@ export const REGIONS = [
   { id: 'south-coastal', name: 'South Coastal (incl. Islands)' },
 ];
 
-// Representative cities (real coordinates). terrain decides the heat-wave threshold (see severity.js).
-// State and search keywords per city (used by the search box, stored on each station document).
+// For the search box: each city's state, then extra words people might type ("himalaya", "vizag"...).
+// Cities on the coast or in the hills also get "coastal" / "hills" words added automatically below.
 const PLACE = {
   delhi: ['Delhi'], jaipur: ['Rajasthan'], amritsar: ['Punjab'], jodhpur: ['Rajasthan', 'thar desert'],
   srinagar: ['Jammu and Kashmir', 'himalaya himalayas kashmir valley mountain'], shimla: ['Himachal Pradesh', 'himalaya himalayas hill station mountain'],
@@ -38,11 +40,15 @@ const PLACE = {
   hyderabad: ['Telangana', 'deccan'], bengaluru: ['Karnataka', 'bangalore deccan'], madurai: ['Tamil Nadu'], kurnool: ['Andhra Pradesh', 'deccan'],
   chennai: ['Tamil Nadu', 'madras'], kochi: ['Kerala', 'cochin'], visakhapatnam: ['Andhra Pradesh', 'vizag'], 'port-blair': ['Andaman and Nicobar Islands', 'island islands'],
 };
+// Small helper so each city below is one short line. terrain is 'plains' unless given; it decides which
+// heat limit applies (see severity.js). It also fills in the state and the search words from PLACE above.
 const S = (id, name, regionId, lat, lon, terrain = 'plains') => {
   const [state, words = ''] = PLACE[id] || [''];
   const tags = [...words.split(' ').filter(Boolean), ...(terrain === 'coastal' ? ['coast', 'coastal', 'sea'] : terrain === 'hills' ? ['hills', 'hilly'] : [])];
   return { id, name, regionId, lat, lon, terrain, state, tags };
 };
+// The 30 cities, 4 to 6 per region. The coordinates are only the point we ask Open-Meteo about, so there is
+// no weather station behind a "station" here. To add a city: add a line here (and its state/words in PLACE).
 export const STATIONS = [
   S('delhi', 'Delhi', 'north-west-india', 28.61, 77.21),
   S('jaipur', 'Jaipur', 'north-west-india', 26.91, 75.79),
