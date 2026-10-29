@@ -33,7 +33,6 @@ export const liveApi = {
   createReport: (record) => post("/api/reports", record),
   photoUrl: (id) => `${BASE}/api/reports/${encodeURIComponent(id)}/photo`,
   search: (q) => request(`/api/search?q=${encodeURIComponent(q)}`),
-  stats: () => request("/api/stats"),
   runs: (limit = 12) => request(`/api/runs?limit=${limit}`).then((p) => p.runs),
   refresh: () => post("/api/refresh"),
 };
