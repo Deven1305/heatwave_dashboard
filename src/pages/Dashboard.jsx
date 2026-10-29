@@ -12,18 +12,20 @@ import Reports from "./dashboard/Reports.jsx";
 import Forecast from "./dashboard/Forecast.jsx";
 import DataTab from "./dashboard/DataTab.jsx";
 
-/**
- * Dashboard shell: the header (live status + refresh buttons), the tab bar, and the active tab.
- *
- * All data comes from the shared LiveData context (/api/overview, re-read every 5 minutes). Which tab is open, which
- * region/city is selected and the search text all live in the URL (?tab=regions&region=west-india&q=himalaya), so a
- * reload keeps the view and a link can be shared. Tabs receive `params` (read) and `setParam` / `goTo` (write).
- */
+// The dashboard page: the header with the "Live" status and the two buttons, the row of tabs, and whichever tab is open.
+// The tabs themselves are in pages/dashboard/ (one file each); this file only decides which one to show.
+//
+// Two things worth knowing:
+//  - The data is not fetched here. It comes from the shared LiveData context, so the whole site uses one copy.
+//  - What the person is looking at lives in the address bar, e.g. ?tab=regions&region=west-india&q=himalaya.
+//    That way a refresh keeps the view, the back button works and a link can be shared. Tabs read it from `params`
+//    and change it with setParam (one value) or goTo (switch tab).
 export const TABS = [
   ["overview", "Overview"], ["regions", "Regions"], ["stations", "Stations"], ["alerts", "Alerts"],
   ["reports", "Reports"], ["forecast", "Forecast"], ["data", "Data"],
 ];
-const ALIASES = { field: "stations", "live-map": "overview" }; // older links
+// tab names from earlier versions of the site, so old bookmarks still open something sensible
+const ALIASES = { field: "stations", "live-map": "overview" };
 
 export default function Dashboard() {
   const [params, setParams] = useSearchParams();
@@ -31,9 +33,11 @@ export default function Dashboard() {
   const [notice, setNotice] = useState({ kind: "", text: "" });
   const [fetching, setFetching] = useState(false);
 
+  // an unknown or missing ?tab= falls back to the overview instead of showing a blank page
   const requested = ALIASES[params.get("tab")] || params.get("tab");
   const activeTab = TABS.some(([id]) => id === requested) ? requested : "overview";
   usePageTitle(`${TABS.find(([id]) => id === activeTab)[1]} · Dashboard`);
+  // switch tab (and optionally set more values, like the region). The overview needs no ?tab=, which keeps its link short.
   const goTo = (tab, extra = {}) => setParams(tab === "overview" && !Object.keys(extra).length ? {} : { tab, ...extra });
 
   // keep small UI state (like the search text) in the address bar so it survives reloads and can be shared
@@ -43,6 +47,8 @@ export default function Dashboard() {
     return next;
   }, { replace: true });
 
+  // The "Fetch latest data" button: the backend gets new weather from Open-Meteo, then the page shows what was stored.
+  // If it refuses (once a minute only) or Open-Meteo is down, the reason is shown in the notice under the header.
   const pullLatest = async () => {
     setFetching(true);
     setNotice({ kind: "", text: "" });

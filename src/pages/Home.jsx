@@ -5,11 +5,10 @@ import { fmtTemp, formatDateTime, timeAgo } from "../api/live.js";
 import { levelColor } from "../components/live/format.js";
 import usePageTitle from "../hooks/usePageTitle.js";
 
-/**
- * Home page: a live headline ("right now" card + one chip per region), a short explanation of how the data flows,
- * links into the dashboard, an honest note about the data, and a search that opens the Stations tab.
- * All numbers come from the shared LiveData context (the API), never from hard-coded values.
- */
+// The landing page. From top to bottom: a headline with a live "right now" card, one chip per region, a short explanation
+// of how it works, links into the dashboard, a note about what the data is (and isn't), and a closing call to report an observation.
+// Every number on it comes from the shared overview data, nothing is typed in by hand. If the backend is down the
+// card says so and tells you which command starts it.
 const STEPS = [
   ["01", "Collect", "Every 30 minutes the live API asks Open-Meteo for the current weather, the last 30 days and the coming days of 30 Indian cities."],
   ["02", "Store", "MongoDB keeps every reading and every daily value. Reload the page or restart the server and the history is still there."],
@@ -30,7 +29,7 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const s = overview?.summary;
 
-  // "find a city": open the Stations tab with the search already typed in
+  // The "find a city" box: send the person to the Stations tab with their text already in the search box there
   const findPlace = (event) => {
     event.preventDefault();
     const text = query.trim();

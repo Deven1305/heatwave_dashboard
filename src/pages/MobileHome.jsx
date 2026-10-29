@@ -4,12 +4,9 @@ import Badge from "../components/Badge.jsx";
 import { formatDateTime, liveApi } from "../api/live.js";
 import usePageTitle from "../hooks/usePageTitle.js";
 
-/**
- * Mobile companion (/m): a phone-sized list of the stored alerts with a bottom tab bar.
- *
- * It is the same React app (no separate native app) drawn outside the desktop Navbar/Ticker/Footer
- * shell (see App.jsx). Alerts come from the live API (read from MongoDB) and use the shared Badge.
- */
+// The phone page (/m): a narrow list of the alerts stored in MongoDB, with a menu button and a tab bar at the bottom.
+// It is the same React app, not a separate mobile app, just drawn without the desktop navbar, ticker and footer
+// (App.jsx leaves those out for this address). If an Emergency alert is active it is repeated in a red banner at the top.
 
 const TABS = [
   { id: "home", label: "Home", icon: "⌂" },
