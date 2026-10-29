@@ -10,21 +10,21 @@ import MobileHome from "./pages/MobileHome.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import { LiveDataProvider } from "./context/LiveData.jsx";
 
-/**
- * Application frame: skip link, navigation bar, temperature ticker, the current page, footer.
- * LiveDataProvider wraps everything so the ticker, home page, dashboard and mobile page share ONE copy of the live data.
- * The mobile companion (/m) draws its own compact layout, so it skips the desktop navbar, ticker and footer.
- */
+// The frame around every page: skip link, navigation bar, the scrolling ticker, then the page itself, then the footer.
+// The <Routes> block is the list of pages: the address decides which one is shown.
+//
+// LiveDataProvider wraps everything on purpose. The ticker, the home page, the dashboard and the mobile page all need
+// the same overview data, so it is fetched once here and shared, instead of every part asking the backend separately.
 export default function App() {
   const location = useLocation();
-  // The mobile companion is its own compact page: it draws its own status row, menu and bottom tab bar,
-  // so it opts out of the desktop Navbar/Ticker/Footer shell instead of nesting inside it.
+  // /m (the phone page) draws its own status row, menu and bottom tab bar. If we also showed the desktop
+  // navbar, ticker and footer around it we would get two of everything, so on that page we leave them out.
   const isMobileCompanion = location.pathname === "/m";
 
   return (
     <LiveDataProvider>
     <div className="app-shell">
-      {/* keyboard users can jump past the navigation and ticker straight to the page */}
+      {/* Only visible when you tab to it. Lets keyboard and screen-reader users jump over the menu and the ticker */}
       <a className="skip-link" href="#main">Skip to content</a>
       {!isMobileCompanion && <Navbar />}
       {!isMobileCompanion && <Ticker />}
