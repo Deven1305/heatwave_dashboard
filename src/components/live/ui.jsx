@@ -2,12 +2,12 @@ import React from "react";
 import Badge from "../Badge.jsx";
 import { tierKey } from "../../api/live.js";
 
-/** Placeholder box shown while data loads, or when a list is empty (the same box carries the message). */
+// The grey dashed box used both for "loading..." and for "nothing to show"; only the message differs.
 export function Loading({ label = "Loading data…" }) {
   return <div className="data-state" role="status">{label}</div>;
 }
 
-/** Error message with an optional "Try again" button; role=alert makes screen readers announce it. */
+// A red error box. If you pass onRetry it gets a "Try again" button. role="alert" makes screen readers read it out when it appears.
 export function ErrorState({ error, onRetry }) {
   return (
     <div className="data-state data-state-error" role="alert">
@@ -17,12 +17,12 @@ export function ErrorState({ error, onRetry }) {
   );
 }
 
-/** Coloured pill for a heat level (tier: Safe/Watch/Warning/Emergency; severity: the words shown on it). */
+// A Badge for a heat level. `tier` gives the colour (Safe, Watch, Warning or Emergency), `severity` the word on it ("Heatwave").
 export function SeverityBadge({ tier, severity }) {
   return <Badge tier={tierKey(tier)} label={severity || tier} />;
 }
 
-/** Headline number card: a label, a big value, and a small note. `tone="warn"` colours it amber. */
+// A headline number card: small label on top, the big value, a small note underneath. tone="warn" turns it amber.
 export function Stat({ label, value, note, tone }) {
   return (
     <article className={`stat-card lv-stat ${tone ? `lv-tone-${tone}` : ""}`}>
@@ -33,15 +33,16 @@ export function Stat({ label, value, note, tone }) {
   );
 }
 
-/**
- * Generic table. columns: [{ label, key?, render?(row), align? }]; rows are plain objects.
- * With onRowClick the rows become keyboard-usable (Tab to a row, Enter or Space to choose it).
- * The wrapper is focusable and named so a wide table can be scrolled sideways with the keyboard.
- */
+// The one table component all the tabs use, so they look and behave the same.
+//   columns  a list like { label: "City", key: "name" } to print row.name, or { label, render: (row) => ... } for custom content
+//   rows     plain objects. rowKey(row) should give each row a unique id.
+//   onRowClick  when given, rows can be clicked and also chosen with Tab + Enter/Space, and selectedKey highlights one row
+//   empty    the message shown instead of a table when there are no rows (searching with no result also uses it)
+// On a narrow screen a wide table scrolls sideways inside its own box instead of stretching the page.
 export function DataTable({ columns, rows, empty = "No records are available.", rowKey, onRowClick, selectedKey, ariaLabel = "Data table, scrollable" }) {
   if (!rows?.length) return <Loading label={empty} />;
   return (
-    // tabIndex lets keyboard users scroll a wide table sideways (WCAG: scrollable regions must be focusable)
+    // tabIndex={0} is needed so someone using only the keyboard can Tab to the box and scroll it sideways with the arrow keys
     <div className="responsive-table" tabIndex={0} role="region" aria-label={ariaLabel}>
       <table>
         <thead><tr>{columns.map((c) => <th key={c.label} style={c.align ? { textAlign: c.align } : undefined}>{c.label}</th>)}</tr></thead>
