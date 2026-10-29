@@ -25,7 +25,7 @@ try {
 }
 
 // 2. Express. CORS is wide open so the website (a different port) can call us: fine on your own computer,
-//    but it is one of the things to tighten before this goes on the internet (see INSTRUCTIONS.md).
+//    but it is one of the things to tighten before this goes on the internet (for example by restricting the allowed origins).
 //    The 9 MB body limit is there for the photo in a report (7 MB of image becomes about 9 MB once encoded as text).
 const app = express();
 app.use(cors());
