@@ -117,7 +117,7 @@ export default function MobileHome() {
 
       <EmergencyBanner alert={emergencyAlert} />
 
-      <main className="m-list">
+      <div className="m-list">
         {loadingAlerts && <div className="m-loading-more mono">Loading alerts…</div>}
         {alertError && <div className="m-loading-more mono">{alertError}</div>}
         {!loadingAlerts && !alertError && alerts.length === 0 && <div className="m-loading-more mono">No alerts are currently recorded.</div>}
@@ -132,7 +132,7 @@ export default function MobileHome() {
             <div className="m-alert-meta mono">{formatDateTime(a.issuedAt)} · {a.channel} · {a.status}</div>
           </div>
         ))}
-      </main>
+      </div>
 
       <nav className="m-tabbar" aria-label="Primary">
         {TABS.map((t) => (
