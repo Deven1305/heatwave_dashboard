@@ -10,12 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "live": "node live-api/server.js",
-    "test": "node --test live-api/",
-    "mongo:create": "node api-mongo/create_db.js",
-    "mongo:read": "node api-mongo/read.js",
-    "mongo:update": "node api-mongo/update.js",
-    "mongo:delete": "node api-mongo/delete.js",
-    "api-mongo": "node api-mongo/server.js"
+    "test": "node --test live-api/"
   },
   "dependencies": {
     "cors": "^2.8.5",
